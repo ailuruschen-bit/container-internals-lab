@@ -45,7 +45,8 @@ Consequences:
 |---|---|
 | `mount` or `umount` of something | depends on **propagation** (below) |
 | Create, modify, delete a **file** on a copied mount | **yes**: same filesystem, same inodes |
-| Change per-mount flags (e.g. remount read-only) | no: the mount object is a copy |
+| Change per-mount flags (`mount -o remount,bind,ro`) | no: the mount object is a copy |
+| Change super block options (`mount -o remount,ro` without `bind`) | **yes**: the super block is shared |
 
 The second row surprises many people: a mount namespace isolates **mounts**,
 not **files**. Writing `/tmp/x` in a new mount namespace writes the host's
