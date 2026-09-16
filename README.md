@@ -177,7 +177,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   Michael Kerrisk's LWN series "Namespaces in operation".
 
 ### 04 — cgroups v2
-[docs](docs/04-cgroups/)
+[docs](docs/04-cgroups/) · [labs](labs/04-cgroups/)
 
 - **What you will learn:** why namespaces cannot limit resources; the unified
   cgroup v2 hierarchy; controllers (`cpu`, `memory`, `pids`, `io`);
@@ -323,7 +323,7 @@ expected observations.
 | 01 | Linux process fundamentals | Needs review |
 | 02 | Linux filesystem | Needs review |
 | 03 | Namespaces | Needs review |
-| 04 | cgroups v2 | Not started |
+| 04 | cgroups v2 | Needs review |
 | 05 | Capabilities and user namespaces | Not started |
 | 06 | seccomp and no_new_privs | Not started |
 | 07 | rootfs, chroot, pivot_root | Not started |
