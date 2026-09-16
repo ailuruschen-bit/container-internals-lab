@@ -97,7 +97,7 @@ ls -l creds-setuid
 **Predict first.** Which of the four UIDs will be 0? Will `open(/etc/shadow)`
 succeed?
 
-Then disable the effect in two ways:
+Then run it again with the `no_new_privs` flag set by `setpriv`:
 
 ```bash
 setpriv --no-new-privs ./creds-setuid
