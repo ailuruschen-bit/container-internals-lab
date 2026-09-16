@@ -11,6 +11,7 @@ worth reading, not only where to find it.
 | 04 — cgroups v2 | [04-cgroups.md](04-cgroups.md) |
 | 05 — Capabilities | [05-capabilities.md](05-capabilities.md) |
 | 06 — seccomp | [06-seccomp.md](06-seccomp.md) |
+| 07 — rootfs, chroot, pivot_root | [07-rootfs-chroot-pivot-root.md](07-rootfs-chroot-pivot-root.md) |
 
 Conventions:
 

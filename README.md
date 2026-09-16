@@ -216,7 +216,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   `man 2 seccomp`, `man 2 prctl`.
 
 ### 07 — rootfs, chroot, and pivot_root
-[docs](docs/07-rootfs-chroot-pivot-root/)
+[docs](docs/07-rootfs-chroot-pivot-root/) · [labs](labs/07-rootfs-chroot-pivot-root/)
 
 - **What you will learn:** what a root filesystem contains; `chroot()` and
   why it is not a security boundary; `pivot_root()` inside a mount namespace;
@@ -326,7 +326,7 @@ expected observations.
 | 04 | cgroups v2 | Needs review |
 | 05 | Capabilities and user namespaces | Needs review |
 | 06 | seccomp and no_new_privs | Needs review |
-| 07 | rootfs, chroot, pivot_root | Not started |
+| 07 | rootfs, chroot, pivot_root | Needs review |
 | 08 | OverlayFS | Not started |
 | 09 | Build a container manually | Not started |
 | 10 | OCI specifications | Not started |
