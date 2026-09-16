@@ -49,7 +49,7 @@ its permitted set, but it is UID 0. What will its `CapPrm` be?
 sudo setpriv --reuid=$U --regid=$G --clear-groups bash -c 'grep -E "^Cap(Prm|Eff)" /proc/self/status'
 ```
 
-With `--inh-caps` and `--bounding-set` but **without** ambient:
+With an inheritable capability but **without** ambient:
 
 ```bash
 sudo setpriv --reuid=$U --regid=$G --clear-groups --inh-caps=+net_bind_service \
