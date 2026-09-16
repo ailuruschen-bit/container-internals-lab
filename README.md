@@ -162,10 +162,11 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   `filesystems/sharedsubtree.rst`; `man 2 mount`, `man 7 mount_namespaces`.
 
 ### 03 — Namespaces
-[docs](docs/03-namespaces/)
+[docs](docs/03-namespaces/) · [labs](labs/03-namespaces/)
 
 - **What you will learn:** which global resources Linux had before
-  isolation; the PID, mount, network, UTS, IPC, user, and cgroup namespaces;
+  isolation; the UTS, PID, mount, IPC, network, and user namespaces (the cgroup
+  namespace is taught at the end of Chapter 04, after cgroups);
   `clone()`, `unshare()`, `setns()`; `/proc/<pid>/ns`; the tools `unshare`,
   `nsenter`, `lsns`.
 - **Why it matters:** namespaces are what make a process believe it is alone
@@ -181,7 +182,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
 - **What you will learn:** why namespaces cannot limit resources; the unified
   cgroup v2 hierarchy; controllers (`cpu`, `memory`, `pids`, `io`);
   `/sys/fs/cgroup`; moving processes between cgroups; accounting vs limiting;
-  the memory OOM killer inside a cgroup.
+  the memory OOM killer inside a cgroup; the cgroup namespace.
 - **Why it matters:** `--memory` and `--cpus` are just writes to files in
   cgroupfs. The JVM reads those same files to size its heap and thread pools.
 - **Prerequisites:** 01, 02.
@@ -321,7 +322,7 @@ expected observations.
 |---|---|---|
 | 01 | Linux process fundamentals | Needs review |
 | 02 | Linux filesystem | Needs review |
-| 03 | Namespaces | Not started |
+| 03 | Namespaces | Needs review |
 | 04 | cgroups v2 | Not started |
 | 05 | Capabilities and user namespaces | Not started |
 | 06 | seccomp and no_new_privs | Not started |
