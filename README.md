@@ -203,7 +203,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
 - **Primary reading:** `man 7 capabilities`, `man 7 user_namespaces`.
 
 ### 06 — seccomp and no_new_privs
-[docs](docs/06-seccomp/)
+[docs](docs/06-seccomp/) · [labs](labs/06-seccomp/)
 
 - **What you will learn:** seccomp strict and filter modes; classic BPF
   filters; filter actions (`ERRNO`, `KILL`, `TRAP`, `LOG`, `USER_NOTIF`);
@@ -325,7 +325,7 @@ expected observations.
 | 03 | Namespaces | Needs review |
 | 04 | cgroups v2 | Needs review |
 | 05 | Capabilities and user namespaces | Needs review |
-| 06 | seccomp and no_new_privs | Not started |
+| 06 | seccomp and no_new_privs | Needs review |
 | 07 | rootfs, chroot, pivot_root | Not started |
 | 08 | OverlayFS | Not started |
 | 09 | Build a container manually | Not started |
