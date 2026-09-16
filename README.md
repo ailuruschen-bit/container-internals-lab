@@ -313,9 +313,13 @@ prerequisites are covered, experiments are reproducible with documented
 expected observations, important claims have authoritative references, and
 the mechanism is connected back to containers. Files existing is not enough.
 
+Chapter 01 is marked **Needs review**: the content is written, but the labs
+have not yet been run end to end on a Linux VM and checked against their
+documented expected observations.
+
 | Chapter | Topic | Status |
 |---|---|---|
-| 01 | Linux process fundamentals | In progress |
+| 01 | Linux process fundamentals | Needs review |
 | 02 | Linux filesystem | Not started |
 | 03 | Namespaces | Not started |
 | 04 | cgroups v2 | Not started |
