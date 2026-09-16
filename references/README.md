@@ -6,6 +6,7 @@ worth reading, not only where to find it.
 | Chapter | File |
 |---|---|
 | 01 — Linux process fundamentals | [01-linux-process.md](01-linux-process.md) |
+| 02 — Linux filesystem | [02-linux-filesystem.md](02-linux-filesystem.md) |
 
 Conventions:
 

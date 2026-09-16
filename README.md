@@ -147,7 +147,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   `man 5 proc`, `man 7 credentials`, `man 7 signal`.
 
 ### 02 — Linux filesystem: VFS, mounts, root filesystem
-[docs](docs/02-linux-filesystem/)
+[docs](docs/02-linux-filesystem/) · [labs](labs/02-linux-filesystem/)
 
 - **What you will learn:** the Virtual File System (VFS) layer; inodes and
   dentries at a conceptual level; what "mounting" does; the mount table
@@ -313,14 +313,14 @@ prerequisites are covered, experiments are reproducible with documented
 expected observations, important claims have authoritative references, and
 the mechanism is connected back to containers. Files existing is not enough.
 
-Chapter 01 is marked **Needs review**: the content is written, but the labs
-have not yet been run end to end on a Linux VM and checked against their
-documented expected observations.
+Chapters marked **Needs review** have complete content, but their labs have
+not yet been run end to end on a Linux VM and checked against the documented
+expected observations.
 
 | Chapter | Topic | Status |
 |---|---|---|
 | 01 | Linux process fundamentals | Needs review |
-| 02 | Linux filesystem | Not started |
+| 02 | Linux filesystem | Needs review |
 | 03 | Namespaces | Not started |
 | 04 | cgroups v2 | Not started |
 | 05 | Capabilities and user namespaces | Not started |
