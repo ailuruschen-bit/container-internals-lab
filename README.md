@@ -227,7 +227,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
 - **Primary reading:** `man 2 chroot`, `man 2 pivot_root`.
 
 ### 08 — OverlayFS
-[docs](docs/08-overlayfs/)
+[docs](docs/08-overlayfs/) · [labs](labs/08-overlayfs/)
 
 - **What you will learn:** union filesystems; `lowerdir`, `upperdir`,
   `workdir`, `merged`; copy-up; whiteouts and opaque directories; building an
@@ -327,7 +327,7 @@ expected observations.
 | 05 | Capabilities and user namespaces | Needs review |
 | 06 | seccomp and no_new_privs | Needs review |
 | 07 | rootfs, chroot, pivot_root | Needs review |
-| 08 | OverlayFS | Not started |
+| 08 | OverlayFS | Needs review |
 | 09 | Build a container manually | Not started |
 | 10 | OCI specifications | Not started |
 | 11 | runc internals | Not started |

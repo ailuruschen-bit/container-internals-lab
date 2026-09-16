@@ -12,6 +12,7 @@ worth reading, not only where to find it.
 | 05 — Capabilities | [05-capabilities.md](05-capabilities.md) |
 | 06 — seccomp | [06-seccomp.md](06-seccomp.md) |
 | 07 — rootfs, chroot, pivot_root | [07-rootfs-chroot-pivot-root.md](07-rootfs-chroot-pivot-root.md) |
+| 08 — OverlayFS | [08-overlayfs.md](08-overlayfs.md) |
 
 Conventions:
 
