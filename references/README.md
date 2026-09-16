@@ -9,6 +9,7 @@ worth reading, not only where to find it.
 | 02 — Linux filesystem | [02-linux-filesystem.md](02-linux-filesystem.md) |
 | 03 — Namespaces | [03-namespaces.md](03-namespaces.md) |
 | 04 — cgroups v2 | [04-cgroups.md](04-cgroups.md) |
+| 05 — Capabilities | [05-capabilities.md](05-capabilities.md) |
 
 Conventions:
 

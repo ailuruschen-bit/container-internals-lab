@@ -190,7 +190,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
 - **Primary reading:** kernel docs `admin-guide/cgroup-v2.rst`; `man 7 cgroups`.
 
 ### 05 — Capabilities and user namespaces
-[docs](docs/05-capabilities/)
+[docs](docs/05-capabilities/) · [labs](labs/05-capabilities/)
 
 - **What you will learn:** traditional all-or-nothing root; the split into
   capabilities; the permitted, effective, inheritable, bounding, and ambient
@@ -324,7 +324,7 @@ expected observations.
 | 02 | Linux filesystem | Needs review |
 | 03 | Namespaces | Needs review |
 | 04 | cgroups v2 | Needs review |
-| 05 | Capabilities and user namespaces | Not started |
+| 05 | Capabilities and user namespaces | Needs review |
 | 06 | seccomp and no_new_privs | Not started |
 | 07 | rootfs, chroot, pivot_root | Not started |
 | 08 | OverlayFS | Not started |
