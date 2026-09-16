@@ -127,7 +127,7 @@ address, and all namespaces share one subnet with the bridge as their gateway:
  ┌──────────────────────────────────────────────────────────┐
  │        br0 10.200.0.1/24  (bridge = virtual switch)      │
  │         │                     │                          │
- │     veth-a-host           veth-b-host                    │
+ │     veth-a                veth-b                         │
  └─────────┼─────────────────────┼──────────────────────────┘
            │ cable               │ cable
  ┌─────────┼─────────┐   ┌───────┼───────────┐
