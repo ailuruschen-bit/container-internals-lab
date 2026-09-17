@@ -253,7 +253,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   documentation; the man pages from earlier chapters.
 
 ### 10 — OCI specifications
-[docs](docs/10-oci-runtime-spec/)
+[docs](docs/10-oci-runtime-spec/) · [labs](labs/10-oci-runtime-spec/)
 
 - **What you will learn:** why the OCI exists; the Image, Runtime, and
   Distribution specifications; the OCI bundle; `config.json` section by
@@ -329,7 +329,7 @@ expected observations.
 | 07 | rootfs, chroot, pivot_root | Needs review |
 | 08 | OverlayFS | Needs review |
 | 09 | Build a container manually | Needs review |
-| 10 | OCI specifications | Not started |
+| 10 | OCI specifications | Needs review |
 | 11 | runc internals | Not started |
 | 12 | containerd internals | Not started |
 | 13 | Moby / Docker Engine | Not started |

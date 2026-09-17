@@ -14,6 +14,7 @@ worth reading, not only where to find it.
 | 07 — rootfs, chroot, pivot_root | [07-rootfs-chroot-pivot-root.md](07-rootfs-chroot-pivot-root.md) |
 | 08 — OverlayFS | [08-overlayfs.md](08-overlayfs.md) |
 | 09 — Build a container | [09-build-a-container.md](09-build-a-container.md) |
+| 10 — OCI specifications | [10-oci-runtime-spec.md](10-oci-runtime-spec.md) |
 
 Conventions:
 
