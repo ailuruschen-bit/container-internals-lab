@@ -267,7 +267,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   `config-linux.md`, `runtime.md`); `opencontainers/image-spec`.
 
 ### 11 — runc internals
-[docs](docs/11-runc-internals/)
+[docs](docs/11-runc-internals/) · [labs](labs/11-runc-internals/)
 
 - **What you will learn:** a guided trace of `runc run` through
   `libcontainer`: the `nsexec` C bootstrap, namespace setup, rootfs and
@@ -330,7 +330,7 @@ expected observations.
 | 08 | OverlayFS | Needs review |
 | 09 | Build a container manually | Needs review |
 | 10 | OCI specifications | Needs review |
-| 11 | runc internals | Not started |
+| 11 | runc internals | Needs review |
 | 12 | containerd internals | Not started |
 | 13 | Moby / Docker Engine | Not started |
 
