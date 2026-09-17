@@ -294,7 +294,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   release tag recorded in the chapter).
 
 ### 13 — Moby / Docker Engine
-[docs](docs/13-moby-docker-engine/)
+[docs](docs/13-moby-docker-engine/) · [labs](labs/13-moby-docker-engine/)
 
 - **What you will learn:** the Docker Engine API; how `dockerd` translates a
   request into containerd calls; networking and volume management at an
@@ -332,7 +332,7 @@ expected observations.
 | 10 | OCI specifications | Needs review |
 | 11 | runc internals | Needs review |
 | 12 | containerd internals | Needs review |
-| 13 | Moby / Docker Engine | Not started |
+| 13 | Moby / Docker Engine | Needs review |
 
 ---
 
