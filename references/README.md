@@ -16,6 +16,7 @@ worth reading, not only where to find it.
 | 09 — Build a container | [09-build-a-container.md](09-build-a-container.md) |
 | 10 — OCI specifications | [10-oci-runtime-spec.md](10-oci-runtime-spec.md) |
 | 11 — runc internals | [11-runc-internals.md](11-runc-internals.md) |
+| 12 — containerd internals | [12-containerd-internals.md](12-containerd-internals.md) |
 
 Conventions:
 

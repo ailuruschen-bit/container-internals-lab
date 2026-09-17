@@ -281,7 +281,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
   the chapter).
 
 ### 12 — containerd internals
-[docs](docs/12-containerd-internals/)
+[docs](docs/12-containerd-internals/) · [labs](labs/12-containerd-internals/)
 
 - **What you will learn:** why a layer above runc is needed; content store,
   snapshotters, images, containers vs tasks, the runtime v2 shim, and one
@@ -331,7 +331,7 @@ expected observations.
 | 09 | Build a container manually | Needs review |
 | 10 | OCI specifications | Needs review |
 | 11 | runc internals | Needs review |
-| 12 | containerd internals | Not started |
+| 12 | containerd internals | Needs review |
 | 13 | Moby / Docker Engine | Not started |
 
 ---
