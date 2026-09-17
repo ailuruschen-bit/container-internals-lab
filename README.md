@@ -239,7 +239,7 @@ Difficulty scale: ★☆☆☆☆ (gentle) to ★★★★★ (demanding).
 - **Primary reading:** kernel docs `filesystems/overlayfs.rst`.
 
 ### 09 — Build a container manually
-[docs](docs/09-build-a-container/)
+[docs](docs/09-build-a-container/) · [labs](labs/09-build-a-container/)
 
 - **What you will learn:** starting from a normal process, add UTS, PID,
   mount, and network namespaces, an isolated rootfs, `pivot_root`, cgroup
@@ -328,7 +328,7 @@ expected observations.
 | 06 | seccomp and no_new_privs | Needs review |
 | 07 | rootfs, chroot, pivot_root | Needs review |
 | 08 | OverlayFS | Needs review |
-| 09 | Build a container manually | Not started |
+| 09 | Build a container manually | Needs review |
 | 10 | OCI specifications | Not started |
 | 11 | runc internals | Not started |
 | 12 | containerd internals | Not started |
