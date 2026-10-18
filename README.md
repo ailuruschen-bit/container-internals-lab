@@ -7,6 +7,7 @@
 ## 笔记
 
 - [环境变量到底属于谁？](notes/environment-variables-belong-to-processes.md)
+- [CPU 是怎样被操作系统“抢回来”的？](notes/how-the-kernel-takes-back-the-cpu.md)
 
 ## 旧内容
 
