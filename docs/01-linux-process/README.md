@@ -34,6 +34,7 @@ container because those properties **survive** `execve()`.
 | 1 | [Processes and system calls](01-processes-and-system-calls.md) | A process is a kernel data structure; programs talk to the kernel only through system calls. |
 | 2 | [The process tree: PID, PPID, PID 1](02-process-tree.md) | Every process has a parent; PID 1 has special duties. |
 | 3 | [fork, execve, and clone](03-fork-exec-clone.md) | Creating a process and running a program are two separate operations. |
+| 3A | [Linux/Shell 环境变量（中文笔记）](03a-shell-environment-variables.md) | 普通变量、进程环境、配置加载与脚本实践。 |
 | 4 | [/proc: the kernel's view of a process](04-proc-filesystem.md) | You can inspect kernel process state as files. |
 | 5 | [File descriptors](05-file-descriptors.md) | Open files are per-process kernel objects that are inherited. |
 | 6 | [Signals](06-signals.md) | How the kernel and other processes interrupt a process. |
