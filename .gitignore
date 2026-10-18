@@ -1,5 +1,5 @@
-*.o
-/labs/**/bin/
 .DS_Store
-.vscode/
 .idea/
+.vscode/
+*.local
+.env
