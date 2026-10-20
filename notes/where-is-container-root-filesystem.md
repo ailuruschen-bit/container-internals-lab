@@ -1,96 +1,164 @@
-# 容器里的 `/`，到底在哪里？
+# Linux 文件系统、Mount 与 Mount Namespace 学习心得
 
-理解容器文件系统时，最重要的变化不是磁盘上突然多出了一套特殊文件，而是**同一个 Linux 内核为不同进程组织出了不同的路径视图**。
+## 1. 对 Linux 目录树的重新认识
 
-Docker 会组合 PID、Mount、Network、UTS 等 Namespace，让容器进程看到一套看似独立的系统环境。其中，决定进程能看到哪些挂载、以及这些挂载怎样组成目录树的，是 Mount Namespace。
+过去习惯于 Windows 资源管理器的图形化视角，很容易形成一种认知：操作系统中存在一棵固定的目录树，所有进程都在这棵树中访问和操作文件。
 
-## 隔离的是挂载视图
+但 Linux 的实际模型并非如此：
 
-每个进程都有自己的根目录和当前工作目录。路径解析从进程的根目录开始，再沿着它所在 Mount Namespace 中的挂载关系向下查找。
+- 根目录 `/` 不等于某块物理磁盘。
+- 一棵完整的目录树可以由多个文件系统组合而成。
+- 不同进程不一定看到相同的目录树。
+- 某些目录对应磁盘上的真实数据，另一些目录则由内核动态提供内容。
 
-因此，容器里的 `/etc/hosts` 和宿主机进程看到的 `/etc/hosts` 虽然路径相同，却可以来自不同的挂载。反过来，同一份文件也可以通过 bind mount，在宿主机和容器中以两条完全不同的路径出现。
-
-Mount Namespace 隔离的是“这棵挂载树长什么样”，不是复制出一个新的内核或一块新的物理磁盘。
-
-## 容器的根文件系统不是一个普通目录那么简单
-
-容器启动前，运行时会先准备一棵根文件系统，再把它设为容器进程看到的 `/`。这棵目录树通常由多种挂载共同组成：
+例如：
 
 ```text
-镜像只读层 ─┐
-镜像只读层 ─┼─ OverlayFS 等存储机制 ─→ 合并后的根文件系统 `/`
-容器可写层 ─┘                              ├── bind mount / volume
-                                             ├── procfs 挂载到 /proc
-                                             └── tmpfs 等其他挂载
+/
+├── etc/      普通文件系统
+├── home/     普通文件系统
+├── proc/     procfs 虚拟文件系统
+└── sys/      sysfs 虚拟文件系统
 ```
 
-以常见的 OverlayFS 为例，多个只读镜像层是 `lowerdir`，容器自己的可写层是 `upperdir`，内核把它们合并成一个 `merged` 视图。容器进程从 `/` 向下看时，不需要知道某个文件来自哪一层。
+因此，Linux 的目录树是内核通过文件系统和挂载机制组织出的逻辑视图，而不是一棵固定存在的物理树。
 
-这些层的底层数据确实保存在 Docker daemon 所在的主机上，但不能简单理解为“容器的 `/` 永远对应宿主机上的一个普通目录”：
+## 2. Mount 与 Mount Namespace
 
-- 不同存储驱动或 snapshotter 的组织方式不同；
-- OverlayFS 的一个可见目录可能由多个目录合并而成；
-- 读取文件时可能直接使用只读层，第一次修改时则可能发生 copy-up，文件被复制到可写层后再修改；
-- volume、bind mount 和 tmpfs 又有各自独立的来源。
+### Mount（挂载）
 
-Docker 的内部存储目录由 Docker 管理，不应通过直接修改 `/var/lib/docker` 中的文件来改变容器内容。
+Mount 的作用是将一个文件系统接入现有目录树的某个位置。
 
-## 什么时候可以说“两条路径是同一份文件”？
-
-Bind mount 是最直观的情况：宿主机上的一个文件或目录被挂到容器中的另一个路径。此时两边通过不同路径访问同一份挂载内容，容器内的写入也会反映到宿主机，除非挂载被设为只读。
+例如：
 
 ```bash
-mkdir -p demo-data
-printf 'from host\n' > demo-data/message.txt
-
-docker run --rm \
-    --mount "type=bind,src=$PWD/demo-data,dst=/data" \
-    alpine sh -c 'printf "from container\n" >> /data/message.txt'
-
-cat demo-data/message.txt
+mount /dev/sdb1 /data
 ```
 
-输出会同时包含 `from host` 和 `from container`。容器中的 `/data/message.txt` 与当前目录下的 `demo-data/message.txt` 是同一份共享数据的两个路径入口。
+这条命令表示将 `/dev/sdb1` 上的文件系统挂载到 `/data`。此后访问 `/data` 时，内核就会按照这条挂载关系进入对应的文件系统。
 
-但对容器镜像和可写层，不能一概称为“同一个物理文件”。OverlayFS 会参与路径查找和 copy-up，容器看到的是合并后的文件系统对象，而不是一个永远固定的宿主机文件路径。
+挂载不会复制文件内容，而是建立目录树中的路径与文件系统之间的关联。
 
-## `/proc` 展示的是内核生成的视图
+### Mount Namespace（挂载命名空间）
 
-`/proc` 不是普通磁盘目录。读取 `/proc/123/status` 时，内核根据自己维护的进程状态动态生成内容。
+Mount Namespace 可以理解为一组进程共享的挂载关系视图。
 
-在原生 Linux 主机上，容器和宿主机共享同一个内核，信息来源也是同一套内核对象；隔离发生在内核决定“当前进程可以看到什么”时。这里至少有两层机制共同参与：
-
-- Mount Namespace 决定容器的 `/proc` 位置挂载了哪一个 procfs 实例；
-- PID Namespace 决定该 procfs 中可以看到哪些进程，以及这些进程使用什么 PID。
-
-因此，一个容器中的主进程可以认为自己是 PID 1，而宿主机仍然用另一个 PID 标识同一个进程。容器内的 `/proc` 只列出对应 PID Namespace 可见的进程，并不是复制了一份进程数据。
+Linux 宿主机上的普通进程通常位于初始 Mount Namespace 中，容器进程则可以使用独立的 Mount Namespace：
 
 ```text
-同一个内核中的进程对象
-          │
-          ├── 宿主机的 procfs → 展示宿主机可见的 PID
-          │
-          └── 容器的 procfs   → 展示容器 PID Namespace 可见的 PID
+Namespace A          Namespace B
+    /                     /
+    └── data/             └── data/
+         │                     │
+     文件系统 X             文件系统 Y
 ```
 
-不过，不能由此推断 `/proc` 中所有信息都天然完成了隔离。不同文件可能依赖 PID、Network、Mount、User 等不同 Namespace，也可能暴露尚未虚拟化的系统级信息。容器运行时还需要正确挂载并限制 `/proc`，不能只创建一个 PID Namespace 就认为隔离已经完成。
+两个进程访问相同的 `/data` 路径，却可以进入不同的文件系统。
 
-## 我现在的理解
+需要注意：
 
-容器文件系统可以分成三层来看：
+- Namespace 不会自动复制底层文件系统。
+- Namespace 不会自动改变进程的根目录。
+- 不同 Namespace 可以引用相同的底层文件资源。
+- 挂载事件是否传播到其他 Namespace，还取决于 `shared`、`private` 等挂载传播属性。
 
-1. **Mount Namespace** 决定进程看到怎样的挂载树；
-2. **OverlayFS、volume 和 bind mount** 决定每个路径背后的数据来自哪里；
-3. **procfs 等虚拟文件系统** 由内核动态生成内容，再结合相关 Namespace 提供不同视图。
+## 3. 进程的 root 与 cwd
 
-所以，容器并不是拥有一块独立磁盘，而是同一个内核为一组进程准备了一棵独立的路径树。树中的某些节点来自镜像层，某些节点直接共享宿主机文件，还有一些节点根本没有对应的磁盘文件。
+Linux 内核为进程维护两个重要的文件系统上下文属性：
+
+- `root`：绝对路径解析的起点。
+- `cwd`：相对路径解析的起点。
+
+它们通常从父进程继承。
+
+例如：
+
+```bash
+cd /home/user
+```
+
+这会改变 Shell 进程的 `cwd`。
+
+而下面的系统调用会将进程的 `root` 改为 `/some/rootfs`，使它之后解析绝对路径时从这里开始：
+
+```c
+chroot("/some/rootfs");
+```
+
+`chroot` 只改变路径解析的起点，本身不是完整的安全隔离机制。容器运行时还会结合 Mount Namespace、挂载配置、权限限制以及 `pivot_root` 等机制准备容器环境。
+
+因此，需要区分三个独立概念：
+
+```text
+root             绝对路径解析起点
+cwd              相对路径解析起点
+Mount Namespace  可见的文件系统挂载关系
+```
+
+即使两个进程属于同一个 Mount Namespace，也可以拥有不同的 `root` 和 `cwd`。反过来，即使两个进程都把自己的根目录称为 `/`，它们看到的文件系统内容也可能不同。
+
+## 4. OverlayFS 与 Docker 容器根目录
+
+Overlay 的含义是叠加、覆盖。OverlayFS 可以将多个目录层合并成统一的文件系统视图。
+
+它主要包含：
+
+- `lowerdir`：一个或多个基础层，通常作为只读层使用。
+- `upperdir`：可写层，保存新增和修改的文件。
+- `workdir`：OverlayFS 内部操作所需的工作目录。
+- `merged`：挂载完成后呈现给使用者的合并视图。
+
+```text
+lowerdir ──┐
+           ├── OverlayFS ── merged ── 容器 /
+upperdir ──┘
+```
+
+查找文件时，OverlayFS 会先考虑 `upperdir`，再查找 `lowerdir`。如果上下层存在同名目录，它们还可能被合并显示。
+
+当容器需要修改只存在于 `lowerdir` 中的文件时，OverlayFS 通常先把文件复制到 `upperdir`，再修改上层副本。这就是 Copy-on-Write（写时复制）。
+
+Docker 容器通常拥有各自的可写层，因此多个容器可以共享镜像基础层，同时隔离各自的修改。容器进程看到的是 OverlayFS 合并后的目录树，不需要知道某个文件实际来自哪一层。
+
+另外，容器中的 `/proc` 并不是复制出来的一套内核状态。容器运行时会在容器的挂载视图中挂载 procfs，同一个 Linux 内核再根据该 procfs 对应的 PID Namespace 展示进程信息。
+
+因此，容器中的进程可以看到自己是 PID 1，而宿主机仍然使用另一个 PID 标识同一个进程。两边读取的都是内核维护的进程对象，只是看到的 PID 和进程范围不同。
+
+## 5. 最终认知模型
+
+Linux 内核管理着底层文件系统资源，以及将这些资源接入目录树的挂载关系。进程再通过自己的文件系统上下文解析路径：
+
+```text
+Linux 内核
+    │
+    ├── 底层文件系统资源
+    │     ├── ext4
+    │     ├── OverlayFS
+    │     ├── procfs
+    │     └── sysfs
+    │
+    └── Mount Namespace
+          │
+          ├── 挂载关系视图 A
+          │      └── 进程 A（root / cwd）
+          │
+          └── 挂载关系视图 B
+                 └── 进程 B（root / cwd）
+```
+
+关键认识：
+
+1. 目录树不是所有进程必须共享的一棵固定物理树。
+2. Mount 负责建立文件系统与目录树之间的挂载关系。
+3. Mount Namespace 让不同进程组拥有不同的挂载关系视图。
+4. `root` 和 `cwd` 决定进程解析路径的起点。
+5. Docker 将 Mount Namespace、根目录切换和 OverlayFS 等机制结合起来，为容器进程提供独立的文件系统环境。
+
+**容器的文件系统隔离，本质上不是复制一台完整的计算机，而是通过同一个 Linux 内核，为不同进程组织出不同的文件系统视图。**
 
 ## 延伸阅读
 
 - [Linux mount namespaces](https://man7.org/linux/man-pages/man7/mount_namespaces.7.html)
-- [Linux PID namespaces 与 `/proc`](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html)
+- [Linux `chroot`](https://man7.org/linux/man-pages/man2/chroot.2.html)
 - [Linux 内核 OverlayFS 文档](https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html)
-- [Docker 存储驱动与镜像层](https://docs.docker.com/engine/storage/drivers/)
-- [Docker bind mounts](https://docs.docker.com/engine/storage/bind-mounts/)
-
-> 在 macOS 上使用 Docker Desktop 时，Docker daemon 和容器运行在 Linux 虚拟机中。镜像层和容器可写层首先位于这台虚拟机里；Docker Desktop 再额外提供文件共享机制，让 macOS 路径能够作为 bind mount 出现在容器中。
+- [Linux PID namespaces 与 `/proc`](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html)
