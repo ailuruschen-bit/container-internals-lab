@@ -9,6 +9,7 @@
 - [环境变量到底属于谁？](notes/environment-variables-belong-to-processes.md)
 - [CPU 是怎样被操作系统“抢回来”的？](notes/how-the-kernel-takes-back-the-cpu.md)
 - [Linux 文件系统、Mount 与 Mount Namespace 学习心得](notes/where-is-container-root-filesystem.md)
+- [Namespace 隔离视图，Cgroup 限制用量](notes/namespace-views-and-cgroup-limits.md)
 
 ## 旧内容
 
