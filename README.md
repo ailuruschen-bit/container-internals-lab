@@ -10,6 +10,7 @@
 - [CPU 是怎样被操作系统“抢回来”的？](notes/how-the-kernel-takes-back-the-cpu.md)
 - [Linux 文件系统、Mount 与 Mount Namespace 学习心得](notes/where-is-container-root-filesystem.md)
 - [Namespace 隔离视图，Cgroup 限制用量](notes/namespace-views-and-cgroup-limits.md)
+- [Linux 容器网络底层原理：从 Network Namespace 到 NAT](notes/linux-container-networking.md)
 
 ## 旧内容
 
