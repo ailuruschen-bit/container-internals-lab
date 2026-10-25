@@ -1,5 +1,7 @@
 # Linux 容器网络底层原理：从 Network Namespace 到 NAT
 
+**中文** | [English](en/linux-container-networking.md) | [日本語](ja/linux-container-networking.md)
+
 容器网络看起来像一套独立的小型网络：容器有自己的网卡、IP、路由和端口，还能与其他容器及互联网通信。
 
 Docker 并没有重新实现 TCP/IP 协议栈。它主要是在组合 Linux 内核已有的 Network Namespace、veth、Bridge、路由和 Netfilter 等机制。
@@ -205,13 +207,3 @@ Port Mapping       ≈ 预先配置的入站端口转发
 ```
 
 容器不需要独占物理网卡，也不需要独立的 Linux 内核，就能拥有独立的 IP、路由和端口空间。Docker 的作用，是把这些 Linux 机制按照容器生命周期自动创建、连接、配置并回收。
-
-## 延伸阅读
-
-- [Linux network namespaces](https://man7.org/linux/man-pages/man7/network_namespaces.7.html)
-- [Linux veth](https://man7.org/linux/man-pages/man4/veth.4.html)
-- [Linux 内核 Ethernet Bridge 文档](https://docs.kernel.org/networking/bridge.html)
-- [Docker：Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/)
-- [AWS：Internet Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Internet_Gateway.html)
-- [AWS：NAT Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-basics.html)
-- [AWS：Gateway Endpoint](https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html)

@@ -1,5 +1,7 @@
 # Linux 文件系统、Mount 与 Mount Namespace 学习心得
 
+**中文** | [English](en/where-is-container-root-filesystem.md) | [日本語](ja/where-is-container-root-filesystem.md)
+
 ## 1. 对 Linux 目录树的重新认识
 
 过去习惯于 Windows 资源管理器的图形化视角，很容易形成一种认知：操作系统中存在一棵固定的目录树，所有进程都在这棵树中访问和操作文件。
@@ -155,10 +157,3 @@ Linux 内核
 5. Docker 将 Mount Namespace、根目录切换和 OverlayFS 等机制结合起来，为容器进程提供独立的文件系统环境。
 
 **容器的文件系统隔离，本质上不是复制一台完整的计算机，而是通过同一个 Linux 内核，为不同进程组织出不同的文件系统视图。**
-
-## 延伸阅读
-
-- [Linux mount namespaces](https://man7.org/linux/man-pages/man7/mount_namespaces.7.html)
-- [Linux `chroot`](https://man7.org/linux/man-pages/man2/chroot.2.html)
-- [Linux 内核 OverlayFS 文档](https://www.kernel.org/doc/html/latest/filesystems/overlayfs.html)
-- [Linux PID namespaces 与 `/proc`](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html)

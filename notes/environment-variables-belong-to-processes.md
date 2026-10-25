@@ -1,5 +1,7 @@
 # 环境变量到底属于谁？
 
+**中文** | [English](en/environment-variables-belong-to-processes.md) | [日本語](ja/environment-variables-belong-to-processes.md)
+
 在 Shell 中，我们既可以写 `NAME=Tom`，也可以写 `export NAME=Tom`；还可以把同样的内容放进 `.bashrc` 或 `/etc/environment`。这些写法看起来都在“设置变量”，但变量由谁保存、能否传给子进程、何时失效并不相同。
 
 ## Shell 变量与环境变量

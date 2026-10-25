@@ -1,5 +1,7 @@
 # Namespace 隔离视图，Cgroup 限制用量
 
+**中文** | [English](en/namespace-views-and-cgroup-limits.md) | [日本語](ja/namespace-views-and-cgroup-limits.md)
+
 理解 Namespace 之后，我产生了一个问题：既然容器已经看不到外部的进程、文件系统和网络环境，为什么还需要 Cgroup？
 
 答案是，两者解决的并不是同一类问题：
@@ -171,9 +173,3 @@ Cgroup     对进程组的真实资源使用进行统计、调度和限额
 两者结合后，容器中的进程既像处于独立环境中，又不能无限制地消耗宿主机资源。但它们仍然只是同一个 Linux 内核管理的普通进程。
 
 还需要保留一个边界：Namespace 和 Cgroup 不是完整的安全体系。容器通常还会结合 rootfs、Capabilities、Seccomp 等机制，进一步约束进程能够访问的文件和执行的操作。
-
-## 延伸阅读
-
-- [Linux 内核：Control Group v2](https://docs.kernel.org/admin-guide/cgroup-v2.html)
-- [Docker：Resource constraints](https://docs.docker.com/engine/containers/resource_constraints/)
-- [Docker：Runtime metrics](https://docs.docker.com/engine/containers/runmetrics/)
