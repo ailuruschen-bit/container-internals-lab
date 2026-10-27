@@ -14,6 +14,7 @@
 - [Namespace 隔离视图，Cgroup 限制用量](notes/namespace-views-and-cgroup-limits.md)
 - [Linux 容器网络底层原理：从 Network Namespace 到 NAT](notes/linux-container-networking.md)
 - [Docker 基础实操：把 Mount 与 Network 对应到内核机制](notes/docker-mount-and-network-practice.md)
+- [Docker Image 基础操作：先学会查看镜像](notes/docker-image-basics.md)
 
 ## 旧内容
 
