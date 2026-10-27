@@ -449,12 +449,3 @@ Linux Kernel
 我最终形成的学习方法是：**先明确自己希望容器获得什么环境，再找到 Docker 的配置方式，从容器内外观察结果，最后把现象还原到底层机制。**
 
 Docker 命令不必全部背下来。知道自己正在配置文件系统、网络还是进程，再通过 `--help` 查具体参数，通常比死记命令更可靠。
-
-## 参考资料
-
-- [OrbStack Architecture](https://docs.orbstack.dev/architecture)
-- [OrbStack：Volumes & Mounts](https://docs.orbstack.dev/docker/file-sharing)
-- [OrbStack：Container Networking](https://docs.orbstack.dev/docker/network)
-- [Docker：docker container run](https://docs.docker.com/reference/cli/docker/container/run/)
-- [Docker：docker container exec](https://docs.docker.com/reference/cli/docker/container/exec/)
-- [Docker：docker network connect](https://docs.docker.com/reference/cli/docker/network/connect/)
