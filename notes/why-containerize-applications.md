@@ -1,22 +1,24 @@
-# 我为什么需要容器化？
+# Why Do I Need Containerization?
 
-最开始理解容器时，我比较关注 Namespace、Cgroup 和虚拟网络是怎样实现的。学完这些底层机制之后，我开始重新思考一个更直接的问题：实际使用中，我为什么要把应用放进容器？
+**English** | [中文](zh/why-containerize-applications.md) | [日本語](ja/why-containerize-applications.md)
 
-目前我的理解可以归纳为三点：隔离运行环境、交付完整依赖，以及让部署和扩容变得更标准、更迅速。
+When I first set out to understand containers, I focused on how namespaces, cgroups, and virtual networking are implemented. After working through those underlying mechanisms, I began to revisit a more direct question: in practice, why would I put an application in a container at all?
 
-## 1. 为每个应用准备相对独立的环境
+For now, my understanding boils down to three points: isolating runtime environments, delivering applications together with their full dependencies, and making deployment and scaling more standardized and faster.
 
-假设要在同一台服务器上运行多个 Nginx 服务。如果直接在宿主机上安装，就需要自己处理很多可能重叠的内容：
+## 1. A Relatively Independent Environment for Each Application
 
-- 不同 Nginx 版本及其依赖库；
-- 配置文件和站点资源目录；
-- 日志、缓存和临时文件路径；
-- 服务名称、启动参数和运行用户；
-- 监听地址与端口。
+Suppose several Nginx services need to run on the same server. If they are installed directly on the host, I have to deal with a lot of things that may overlap:
 
-这些问题并非不能手动解决，但应用越多，宿主机上积累的约定和特殊配置就越多。一次升级或路径调整，也可能影响原本正常运行的其他服务。
+- different Nginx versions and their dependency libraries;
+- configuration files and site content directories;
+- log, cache, and temporary file paths;
+- service names, startup options, and the users they run as;
+- listening addresses and ports.
 
-容器提供了另一种组织方式：每个 Nginx 使用自己的镜像文件系统、进程视图和网络环境。两个容器内部都可以使用相同的目录，例如：
+None of this is impossible to handle manually, but the more applications there are, the more conventions and special-case configuration pile up on the host. A single upgrade or path change can also break other services that were working fine.
+
+Containers offer a different way to organize this: each Nginx instance gets its own image filesystem, process view, and network environment. Both containers can use the same directories internally, for example:
 
 ```text
 /etc/nginx/nginx.conf
@@ -24,102 +26,102 @@
 /var/log/nginx
 ```
 
-它们也都可以在各自的 Network Namespace 中监听 `80` 端口，而不会彼此冲突。需要从宿主机访问时，再分别发布到不同的宿主机端口：
+Each can also listen on port `80` in its own network namespace without conflicting with the other. When they need to be reached from the host, they are published to different host ports:
 
 ```text
-宿主机 8080  ──→  Nginx A 容器 80
-宿主机 8081  ──→  Nginx B 容器 80
+Host 8080  ──→  Nginx A container 80
+Host 8081  ──→  Nginx B container 80
 ```
 
-这让我意识到，容器并不是消灭了冲突，而是把冲突限制在更清楚的边界内。容器内部的端口和路径可以重复使用；一旦映射到宿主机或共享外部资源，仍然需要避免冲突。
+This made me realize that containers do not eliminate conflicts; they confine them within clearer boundaries. Ports and paths inside containers can be reused freely, but once they are mapped to the host or touch shared external resources, conflicts still have to be avoided.
 
-这种隔离也不是每个容器独占一台计算机。容器仍然共享同一个 Linux 内核和宿主机硬件，资源竞争还需要通过 Cgroup 的限制与调度来管理。
+Nor does this isolation mean that each container has a computer to itself. Containers still share the same Linux kernel and host hardware, and contention for resources still has to be managed through cgroup limits and scheduling.
 
-## 2. 把应用及其依赖变成可交付的整体
+## 2. Turning an Application and Its Dependencies into a Deliverable Unit
 
-传统部署经常要先在目标服务器上安装运行时、系统库和工具，再复制应用、修改配置并启动服务。即使有安装文档，也可能因为软件版本或操作顺序不同，出现“开发环境能运行，生产环境却失败”的情况。
+Traditional deployment often means first installing a runtime, system libraries, and tools on the target server, then copying the application, editing configuration, and starting the service. Even with installation documentation, differences in software versions or in the order of steps can lead to the classic "it works in development but fails in production."
 
-容器镜像可以把以下内容组织成一个有版本的交付物：
+A container image can organize the following into a single versioned deliverable:
 
 ```text
 Container Image
-    ├── 应用程序
-    ├── 语言运行时
-    ├── 系统库与工具
-    ├── 文件目录结构
-    └── 默认启动配置
+    ├── Application
+    ├── Language runtime
+    ├── System libraries and tools
+    ├── Directory structure
+    └── Default startup configuration
 ```
 
-生产环境不再重新手动拼装这些依赖，而是拉取已经构建并验证过的镜像，再用它创建容器。同一个镜像也可以先后经过开发验证、自动测试和生产部署，减少不同阶段重新安装环境带来的偏差。
+Production no longer reassembles these dependencies by hand; it pulls an image that has already been built and verified, and creates containers from it. The same image can go through development verification, automated testing, and production deployment in turn, reducing the drift introduced by reinstalling the environment at each stage.
 
-不过，“打包环境”不能简单理解为把开发电脑完整复制到生产服务器，更不能保证任何环境之间都能一键无缝迁移。
+However, "packaging the environment" should not be understood simply as copying a development machine wholesale onto a production server, and it certainly does not guarantee seamless one-click migration between any two environments.
 
-镜像并不包含自己的 Linux 内核，而且还受到 CPU 架构和运行平台兼容性的影响。数据库地址、密码、证书等环境相关配置，以及需要长期保存的业务数据，也不应该直接固化在通用镜像中，通常要通过环境变量、Secret、配置文件和 Volume 在运行时提供。
+An image does not include its own Linux kernel, and it is also subject to CPU architecture and platform compatibility. Environment-specific configuration such as database addresses, passwords, and certificates, as well as business data that must be kept long term, should not be baked into a general-purpose image either; these are usually supplied at runtime through environment variables, secrets, configuration files, and volumes.
 
-所以更准确的说法是：
+A more accurate way to put it is:
 
-> 镜像固定应用及其运行依赖，运行时配置负责适配具体环境。
+> The image pins down the application and its runtime dependencies; runtime configuration adapts it to a specific environment.
 
-容器化提高的是环境的一致性和交付的可重复性，而不是让所有外部差异自动消失。
+What containerization improves is environmental consistency and the repeatability of delivery, not the automatic disappearance of every external difference.
 
-## 3. 让部署、版本切换和横向扩容更容易
+## 3. Easier Deployment, Version Switching, and Horizontal Scaling
 
-镜像准备好以后，创建一个新的应用实例不再需要从头安装软件，只需要使用指定镜像启动容器。容器本身也是相对轻量的进程隔离环境，因此通常能够快速创建、停止和替换。
+Once an image is ready, creating a new application instance no longer requires installing software from scratch; it only takes starting a container from the specified image. A container is itself a relatively lightweight, process-level isolated environment, so it can usually be created, stopped, and replaced quickly.
 
-这会改变应用的维护方式。相比登录服务器后直接修改正在运行的程序，更适合的做法是：
+This changes how applications are maintained. Rather than logging in to a server and modifying the running program directly, a better approach is:
 
 ```text
-修改代码或依赖
+Change code or dependencies
       ↓
-构建新镜像
+Build a new image
       ↓
-完成测试
+Finish testing
       ↓
-使用新镜像替换旧容器
+Replace the old container with one from the new image
 ```
 
-镜像标签可以表达便于阅读的版本，Digest 则可以精确指向镜像内容。部署时保存明确的镜像版本，出现问题后就能重新启动经过验证的旧版本，而不必猜测服务器曾经被手动修改过什么。
+Image tags can express human-readable versions, while digests point precisely to image content. If deployments record an explicit image version, a problem can be resolved by starting the previously verified version again, without having to guess what manual changes were once made on the server.
 
-同一个镜像还能创建多个容器实例：
+The same image can also create multiple container instances:
 
 ```text
                   ┌── App Container 1
-客户端 ── 入口 ───┼── App Container 2
+Client ── Entry ──┼── App Container 2
                   └── App Container 3
 ```
 
-这为横向扩容提供了很好的基础，但 Docker 镜像和容器本身并不等于完整的自动扩容方案。多个实例之外，还需要入口负载均衡、服务发现、健康检查和容器调度等能力。
+This provides a solid foundation for horizontal scaling, but Docker images and containers by themselves are not a complete auto-scaling solution. Beyond multiple instances, it also takes load balancing at the entry point, service discovery, health checks, and container scheduling.
 
-应用自身也要适合复制。如果请求状态只保存在某一个容器的内存或本地可写层中，新增副本后，不同实例之间可能得到不一致的结果。常见做法是让应用实例尽量无状态，把共享会话和持久化数据放到外部存储中。
+The application itself must also be suitable for replication. If request state is kept only in one container's memory or local writable layer, adding replicas can lead to inconsistent results across instances. The common practice is to keep application instances as stateless as possible and move shared sessions and persistent data to external storage.
 
-## 4. 单一应用服务器为什么仍然值得容器化
+## 4. Why a Single-Application Server Is Still Worth Containerizing
 
-如果一台生产服务器只运行一个应用，多应用之间的依赖冲突确实不再是最突出的矛盾。但容器的价值并没有因此消失，只是重点发生了变化：
+If a production server runs only one application, dependency conflicts between applications are no longer the most pressing issue. But the value of containers does not disappear; the emphasis simply shifts:
 
-- 用镜像统一开发、测试和生产使用的应用依赖；
-- 用明确的镜像版本代替服务器上的手工修改；
-- 快速创建、替换和回退应用实例；
-- 让相同部署方式可以迁移到更多服务器；
-- 在流量上升时，为增加副本和接入编排系统做好准备。
+- using images to unify the application dependencies across development, testing, and production;
+- replacing manual changes on servers with explicit image versions;
+- quickly creating, replacing, and rolling back application instances;
+- making the same deployment method portable to more servers;
+- preparing to add replicas and adopt an orchestration system when traffic grows.
 
-因此，在单一应用场景中，Docker 的核心价值往往会从“让多个应用互不干扰”，转向“把应用变成标准、可重复、可版本化的交付单元”。
+In a single-application scenario, then, Docker's core value often shifts from "keeping multiple applications from interfering with each other" to "turning the application into a standard, repeatable, versioned unit of delivery."
 
-## 5. 当前形成的理解
+## 5. My Current Understanding
 
-我现在认为，容器化的三个作用并不是互相分离的：
+I now see the three roles of containerization not as separate from one another, but as a chain:
 
 ```text
-运行环境隔离
+Isolated runtime environments
       ↓
-应用与依赖可以一起打包
+The application and its dependencies can be packaged together
       ↓
-同一个交付物能够被重复部署
+The same deliverable can be deployed repeatedly
       ↓
-版本替换、回退和增加副本变得更容易
+Version replacement, rollback, and adding replicas become easier
 ```
 
-容器化真正改变的，不只是应用怎样运行，还包括应用怎样从开发环境走到生产环境。
+What containerization really changes is not only how an application runs, but also how it travels from development to production.
 
-过去交付的可能是一份程序和一组安装说明，然后在每台服务器上重新搭建环境。容器化之后，交付物变成经过验证的镜像及其运行配置。服务器不再保存大量只靠人工记忆的安装过程，而是负责运行一个明确版本的应用环境。
+In the past, the deliverable might have been a program plus a set of installation instructions, with the environment rebuilt on every server. With containerization, the deliverable becomes a verified image together with its runtime configuration. Servers no longer hold lengthy installation procedures that live only in people's memories; instead, they run an application environment of an explicit version.
 
-对我来说，这就是容器化最有价值的地方：**把容易产生差异的手工部署过程，变成可以重复创建、验证和替换的标准运行单元。**
+To me, this is the most valuable thing about containerization: **it turns an error-prone manual deployment process into a standard runtime unit that can be repeatedly created, verified, and replaced.**

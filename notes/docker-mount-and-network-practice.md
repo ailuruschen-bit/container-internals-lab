@@ -1,25 +1,27 @@
-# Docker 基础实操：把 Mount 与 Network 对应到内核机制
+# Hands-On Docker Basics: Mapping Mounts and Networks to Kernel Mechanisms
 
-前面学习 Namespace、Cgroup、OverlayFS 和容器网络时，我接触到的更多是抽象机制。这次实验的目的不是背诵 Docker 命令，而是把这些机制和真正可观察的容器行为对应起来。
+**English** | [中文](zh/docker-mount-and-network-practice.md) | [日本語](ja/docker-mount-and-network-practice.md)
 
-我的实验环境是 **macOS + OrbStack**。Docker Engine 实际运行在 OrbStack 提供的 Linux 虚拟环境中，因此有些路径会比原生 Linux Docker 多一层文件共享或端口转发。
+When I studied namespaces, cgroups, OverlayFS, and container networking, I was mostly dealing with abstract mechanisms. The goal of this lab was not to memorize Docker commands, but to connect those mechanisms to container behavior I could actually observe.
 
-## 1. 先认清当前运行环境
+My lab environment is **macOS + OrbStack**. The Docker Engine actually runs inside a Linux environment provided by OrbStack, so some paths involve an extra layer of file sharing or port forwarding compared with native Docker on Linux.
 
-当前环境可以简化为：
+## 1. Understand the Runtime Environment First
+
+The current environment can be simplified as follows:
 
 ```text
 macOS
   └── Docker CLI
         └── Docker Context: orbstack
-              └── 转发到 macOS 的 Docker Socket
-                    └── OrbStack VM 中的 Docker Engine
-                          └── Linux Containers
+              └── Docker socket forwarded to macOS
+                    └── Docker Engine in the OrbStack VM
+                          └── Linux containers
 ```
 
-Docker CLI 只是客户端，Docker Context 保存客户端应该连接哪个 Engine。OrbStack Linux Machine 与 Docker Container 也是两类不同的运行环境，日常操作容器不需要先进入 Linux Machine。
+The Docker CLI is only a client; a Docker context records which engine the client should connect to. An OrbStack Linux machine and a Docker container are also two different kinds of runtime environments, and there is no need to enter the Linux machine first for day-to-day container work.
 
-我用下面几条命令确认环境：
+I used the following commands to check the environment:
 
 ```bash
 orb start
@@ -28,18 +30,18 @@ docker --context orbstack info
 docker version
 ```
 
-我曾遇到过这样的错误：
+At one point I ran into this error:
 
 ```text
 failed to connect to the docker API
 ... docker.sock: no such file or directory
 ```
 
-这并不是 Docker 命令不存在，而是 CLI 选中的 Socket 不可用。对 OrbStack 来说，常见原因是 OrbStack 没有启动，或者当前 Context 指向了错误的位置。
+This does not mean the Docker command is missing; it means the socket the CLI selected is unavailable. With OrbStack, the usual causes are that OrbStack is not running or that the current context points to the wrong location.
 
-## 2. 从 `run` 和 `exec` 理解容器进程
+## 2. Understanding Container Processes Through `run` and `exec`
 
-Docker 的许多命令可以按“管理对象 + 操作”来理解：
+Many Docker commands can be read as "object to manage + action":
 
 ```bash
 docker network create lab-net
@@ -47,9 +49,9 @@ docker network inspect lab-net
 docker volume ls
 ```
 
-也有一些常用简写，例如 `docker ps` 相当于 `docker container ls`。
+There are also common shorthands; for example, `docker ps` is equivalent to `docker container ls`.
 
-创建容器与进入已有容器是两件不同的事：
+Creating a container and entering an existing one are two different things:
 
 ```bash
 docker run -dit --name process-lab alpine sh
@@ -58,39 +60,39 @@ docker stop process-lab
 docker rm process-lab
 ```
 
-- `run` 创建一套新的容器运行环境，并启动它的主进程。
-- `exec` 在正在运行的容器环境中启动一个额外进程。
-- `exec` 启动的 Shell 退出，不会自动结束容器主进程。
-- 容器主进程退出后，容器通常也会停止。
+- `run` creates a new container runtime environment and starts its main process.
+- `exec` starts an additional process inside a running container's environment.
+- Exiting a shell started with `exec` does not end the container's main process.
+- When the main process exits, the container normally stops as well.
 
-这里的 `alpine` 是一个轻量的 Linux 用户空间镜像，`sh` 是容器启动后执行的程序。镜像中有程序、动态库和配置文件，但没有一套独立的 Linux 内核；容器仍然使用 OrbStack Linux 环境的内核。
+Here, `alpine` is a lightweight Linux userspace image, and `sh` is the program executed when the container starts. The image contains programs, shared libraries, and configuration files, but no Linux kernel of its own; the container still uses the kernel of the OrbStack Linux environment.
 
-这次实验中最常用的参数是：
+The options I used most in this lab were:
 
-| 参数 | 含义 | 作用 |
+| Option | Stands for | Effect |
 |---|---|---|
-| `-i` | interactive | 保持标准输入开放 |
-| `-t` | tty | 分配伪终端 |
-| `-d` | detach | 后台运行 |
-| `--rm` | remove | 容器退出后自动删除 |
-| `--name` | name | 指定容器名称 |
-| `-u` | user | 指定运行用户 |
-| `-p` | publish | 发布容器端口 |
-| `--mount` | mount | 配置文件系统挂载 |
-| `--network` | network | 指定 Docker 网络 |
+| `-i` | interactive | Keeps standard input open |
+| `-t` | tty | Allocates a pseudo-terminal |
+| `-d` | detach | Runs in the background |
+| `--rm` | remove | Removes the container automatically when it exits |
+| `--name` | name | Assigns a container name |
+| `-u` | user | Specifies the user to run as |
+| `-p` | publish | Publishes a container port |
+| `--mount` | mount | Configures a filesystem mount |
+| `--network` | network | Specifies a Docker network |
 
-短参数可以组合，例如 `-it` 和 `-dit`。这里的 `i` 是 Interactive，`t` 是 TTY，`d` 是 Detach，`p` 是 Publish。
+Short options can be combined, as in `-it` and `-dit`. Here `i` stands for interactive, `t` for TTY, `d` for detach, and `p` for publish.
 
-## 3. Bind Mount：容器与 macOS 共享文件
+## 3. Bind Mounts: Sharing Files Between a Container and macOS
 
-我先在 macOS 上准备目录和文件：
+First, I prepared a directory and a file on macOS:
 
 ```bash
 mkdir -p "$HOME/docker-fs-lab"
 echo "Hello from macOS" > "$HOME/docker-fs-lab/test.txt"
 ```
 
-然后将该目录挂载到容器的 `/data`：
+Then I mounted that directory at `/data` in a container:
 
 ```bash
 docker run --rm -it \
@@ -99,38 +101,38 @@ docker run --rm -it \
   alpine sh
 ```
 
-`--mount` 中三个字段的含义是：
+The three fields in `--mount` mean:
 
-- `type=bind`：使用 Bind Mount。
-- `source`：挂载源，即 macOS 上的目录。
-- `target`：容器中的访问路径。
+- `type=bind`: use a bind mount.
+- `source`: the mount source, here a directory on macOS.
+- `target`: the path through which the container accesses it.
 
-在容器中读取并写入文件：
+Inside the container, I read one file and wrote another:
 
 ```bash
 cat /data/test.txt
 echo "Hello from container" > /data/container.txt
 ```
 
-退出容器后，在 macOS 中仍然可以看到新文件：
+After exiting the container, the new file is still visible on macOS:
 
 ```bash
 cat "$HOME/docker-fs-lab/container.txt"
 ```
 
-这个实验说明 `/data` 不是复制进容器的一份数据，而是容器访问共享资源的一个路径入口。在 OrbStack 中，macOS 文件先通过文件共享机制提供给 Linux 环境，再被挂载到容器中。
+This experiment shows that `/data` is not a copy of the data placed inside the container, but a path through which the container reaches a shared resource. In OrbStack, macOS files are first exposed to the Linux environment through a file-sharing mechanism and then mounted into the container.
 
-### Volume 与 tmpfs
+### Volumes and tmpfs
 
-除了 Bind Mount，Docker 还经常使用另外两种挂载：
+Besides bind mounts, Docker commonly uses two other types of mounts:
 
-| 类型 | 数据来源 | 适合场景 |
+| Type | Data source | Typical use |
 |---|---|---|
-| `bind` | 指定的宿主机路径 | 开发目录、配置文件 |
-| `volume` | Docker 管理的存储 | 数据库、持久化数据 |
-| `tmpfs` | 内存支持的临时文件系统 | 缓存、临时数据 |
+| `bind` | A specified host path | Development directories, configuration files |
+| `volume` | Docker-managed storage | Databases, persistent data |
+| `tmpfs` | A memory-backed temporary filesystem | Caches, temporary data |
 
-命名 Volume：
+A named volume:
 
 ```bash
 docker run --rm -it \
@@ -141,9 +143,9 @@ docker volume ls
 docker volume inspect mydata
 ```
 
-删除使用它的容器后，命名 Volume 仍然可以保留。与 Bind Mount 不同，它的实际存储位置由 Docker 管理。
+A named volume can survive the removal of the containers that use it. Unlike a bind mount, its actual storage location is managed by Docker.
 
-tmpfs：
+tmpfs:
 
 ```bash
 docker run --rm -it \
@@ -151,52 +153,52 @@ docker run --rm -it \
   alpine sh
 ```
 
-tmpfs 不需要 `source`，容器停止后其中的数据不会作为普通持久化数据保留下来。
+A tmpfs mount needs no `source`, and its data is not kept as ordinary persistent data once the container stops.
 
-### 观察容器根文件系统
+### Observing the Container's Root Filesystem
 
-在容器内执行：
+Inside the container, I ran:
 
 ```bash
 mount | grep ' on / '
 mount | grep ' on /proc '
 ```
 
-我的实验中观察到类似结果：
+In my lab, the output looked like this:
 
 ```text
 overlay on / type overlay (...)
 proc on /proc type proc (...)
 ```
 
-这说明容器的 `/` 由 OverlayFS 组织，而 `/proc` 是另外挂载的 procfs。OverlayFS 通常用 `lowerdir` 提供基础层，用 `upperdir` 保存当前容器的修改，并使用 `workdir` 完成内部操作。
+This shows that the container's `/` is assembled by OverlayFS, while `/proc` is a separately mounted procfs. OverlayFS typically uses `lowerdir` for the base layers, `upperdir` to store the current container's changes, and `workdir` for its internal operations.
 
-因此，容器看到的根目录不是一块专属物理磁盘，而是多个文件系统与挂载关系共同构成的视图。具体使用哪种存储驱动或快照机制仍取决于 Docker 环境，不能把一次实验的 `overlay` 输出当成所有环境的固定结果。
+The root directory a container sees is therefore not a dedicated physical disk but a view composed of multiple filesystems and mount relationships. Which storage driver or snapshot mechanism is actually used still depends on the Docker environment, so the `overlay` output from one experiment should not be taken as a fixed result for every environment.
 
-## 4. 自定义 Bridge：创建容器虚拟局域网
+## 4. Custom Bridges: Creating a Virtual LAN for Containers
 
-Docker 默认提供几种网络：
+Docker provides several networks by default:
 
 ```bash
 docker network ls
 ```
 
-| 网络 | Driver | 作用 |
+| Network | Driver | Purpose |
 |---|---|---|
-| `bridge` | bridge | 默认虚拟 Bridge 网络 |
-| `host` | host | 共享 Docker 宿主环境的网络命名空间 |
-| `none` | null | 不配置普通外部网络连接 |
+| `bridge` | bridge | The default virtual bridge network |
+| `host` | host | Shares the network namespace of the Docker host environment |
+| `none` | null | Configures no regular external network connectivity |
 
-在原生 Linux 上，`host` 指 Docker 宿主机的网络。OrbStack 在这个语义之上又做了 macOS 集成，使使用 Host Networking 的服务也能通过 Mac 的 `localhost` 访问，所以不能简单地把实验现象照搬到所有 Docker 环境。
+On native Linux, `host` refers to the Docker host's network. OrbStack adds macOS integration on top of these semantics so that services using host networking can also be reached through the Mac's `localhost`. Observations from this lab therefore cannot simply be assumed to hold in every Docker environment.
 
-我创建了一个自定义 Bridge 网络：
+I created a custom bridge network:
 
 ```bash
 docker network create lab-net
 docker network inspect lab-net
 ```
 
-实验中获得的信息包括：
+The information I got in the lab included:
 
 ```text
 Name: lab-net
@@ -205,16 +207,16 @@ Subnet: 192.168.97.0/24
 Gateway: 192.168.97.1
 ```
 
-这里的 IPAM 是 IP Address Management。Docker 会管理子网，并为接入网络的容器分配内部 IP。
+IPAM here stands for IP Address Management: Docker manages the subnet and assigns internal IP addresses to the containers attached to the network.
 
-创建两个容器并直接接入该网络：
+I created two containers and attached them to this network directly:
 
 ```bash
 docker run -dit --name net-a --network lab-net alpine sh
 docker run -dit --name net-b --network lab-net alpine sh
 ```
 
-其底层结构可以简化为：
+The underlying structure can be simplified as:
 
 ```text
 Linux Kernel
@@ -227,7 +229,7 @@ Linux Kernel
  NetNS  NetNS
 ```
 
-如果容器创建时没有接入 `lab-net`，也可以稍后连接：
+A container that was not attached to `lab-net` at creation time can also be connected later:
 
 ```bash
 docker run -dit --name net-c alpine sh
@@ -235,26 +237,26 @@ docker network connect lab-net net-c
 docker network disconnect lab-net net-c
 ```
 
-这里特意使用 `net-c`，因为前面的 `net-a` 已经通过 `--network lab-net` 接入，不能再把它当作“首次连接网络”的例子。一个容器也可以同时接入多个 Docker Network。
+I deliberately used `net-c` here: `net-a` was already attached through `--network lab-net`, so it could not serve as an example of connecting to a network for the first time. A container can also be attached to multiple Docker networks at once.
 
-在 `net-a` 中验证与 `net-b` 的通信：
+From `net-a`, I verified connectivity to `net-b`:
 
 ```bash
 docker exec -it net-a sh
 ping -c 3 net-b
 ```
 
-能够直接使用 `net-b` 这个名称，是因为用户自定义 Bridge 网络提供了容器名称解析。数据则通过 veth Pair 和 Linux Bridge 真正传输。
+The name `net-b` can be used directly because user-defined bridge networks provide container name resolution. The data itself actually travels through the veth pairs and the Linux bridge.
 
-## 5. 从容器内部观察网络配置
+## 5. Inspecting Network Configuration from Inside a Container
 
-Alpine 缺少工具时，可以先安装：
+If Alpine lacks the necessary tools, install them first:
 
 ```bash
 apk add --no-cache iproute2 iputils curl netcat-openbsd
 ```
 
-然后分别观察接口、路由、邻居和 DNS：
+Then inspect the interface, routes, neighbors, and DNS:
 
 ```bash
 ip -4 addr show eth0
@@ -263,16 +265,16 @@ ip neigh
 cat /etc/resolv.conf
 ```
 
-重点不是记住输出，而是看懂它们之间的关系：
+The point is not to memorize the output but to understand how the pieces relate:
 
-- `eth0` 是容器 Network Namespace 中的虚拟网络接口。
-- 同一子网内的目标可以直接通信，其他目标通常交给默认网关。
-- 邻居表记录同一链路中 IP 与 MAC 地址的对应关系。
-- 自定义 Bridge 网络的 `/etc/resolv.conf` 中常能看到 Docker 内置 DNS 使用的 `127.0.0.11`。
+- `eth0` is a virtual network interface in the container's network namespace.
+- Destinations in the same subnet can be reached directly; other destinations are usually handed to the default gateway.
+- The neighbor table records the mapping between IP and MAC addresses on the same link.
+- On a custom bridge network, `/etc/resolv.conf` often shows `127.0.0.11`, the address used by Docker's embedded DNS server.
 
-## 6. 用 Socket 验证容器间通信
+## 6. Verifying Container-to-Container Communication with Sockets
 
-在 `net-b` 中监听 TCP 端口：
+In `net-b`, listen on a TCP port:
 
 ```bash
 docker exec -it net-b sh
@@ -280,7 +282,7 @@ apk add --no-cache netcat-openbsd
 nc -l 9000
 ```
 
-在 `net-a` 中发起连接：
+In `net-a`, open a connection:
 
 ```bash
 docker exec -it net-a sh
@@ -288,7 +290,7 @@ apk add --no-cache netcat-openbsd
 nc net-b 9000
 ```
 
-连接建立后，两边可以直接发送文本。通信路径是：
+Once the connection is established, either side can send text directly. The communication path is:
 
 ```text
 net-a: Socket
@@ -298,13 +300,13 @@ eth0 → veth Pair → Linux Bridge → veth Pair → eth0
                                         net-b:9000
 ```
 
-这个实验不需要发布宿主机端口，因为两个容器已经位于同一个虚拟网络中。
+This experiment needs no published host port, because both containers are already on the same virtual network.
 
-我还可以让两个容器分别监听自己的 `9000` 端口。端口属于各自的 Network Namespace，因此编号相同并不会直接冲突。
+I can also have each container listen on its own port `9000`. Ports belong to each network namespace separately, so using the same number does not cause a conflict.
 
-## 7. NAT：容器主动访问公网
+## 7. NAT: Containers Reaching the Internet
 
-在 `net-a` 中先验证连通性：
+In `net-a`, first check connectivity:
 
 ```bash
 ping -c 3 google.com
@@ -312,21 +314,21 @@ ip -4 addr show eth0
 ip route
 ```
 
-普通 Bridge 网络通常已经由 Docker 配置好容器 IP、默认网关、转发和出站地址转换，因此使用私有 IP 的容器也能够访问公网。
+On a regular bridge network, Docker has usually already configured the container's IP address, default gateway, forwarding, and outbound address translation, so a container with a private IP can still reach the internet.
 
-我分别从容器与 macOS 查询公网看到的源地址：
+I checked the source address seen from the internet, once from the container and once from macOS:
 
 ```bash
 curl -4 --noproxy '*' https://api.ipify.org
 echo
 ```
 
-其中 `-4` 强制使用 IPv4，`--noproxy '*'` 避免使用 curl 配置中的 HTTP 代理。
+Here `-4` forces IPv4, and `--noproxy '*'` keeps curl from using any configured HTTP proxy.
 
-典型出站路径可以表示为：
+The typical outbound path can be represented as:
 
 ```text
-Container 私有 IP
+Container private IP
       ↓
 veth Pair
       ↓
@@ -334,16 +336,16 @@ Linux Bridge
       ↓
 Routing / SNAT
       ↓
-外部网络
+External network
 ```
 
-SNAT 会改写源地址，必要时也会改写源端口；Conntrack 记录连接与转换状态，使返回包能够交回原容器。
+SNAT rewrites the source address, and the source port when necessary; conntrack records the connection and its translation state so that return packets can be delivered back to the original container.
 
-不过，当前环境中可能同时存在 Docker Linux 网络、OrbStack、macOS 和家庭路由器等多层网络。公网 IP 查询只能验证最终对外呈现的地址，不能单凭这个结果断言每一层具体使用了什么 NAT 规则。
+That said, the current environment may involve several network layers at once: Docker's Linux networking, OrbStack, macOS, a home router, and so on. Looking up the public IP only verifies the address that is ultimately presented to the outside world; that result alone cannot tell which NAT rules each layer applied.
 
-## 8. Port Mapping：从 macOS 访问容器
+## 8. Port Mapping: Reaching a Container from macOS
 
-我创建一个 Nginx 容器，并只把服务发布到本机回环地址：
+I created an Nginx container and published the service only on the local loopback address:
 
 ```bash
 docker run -d --rm \
@@ -353,69 +355,69 @@ docker run -d --rm \
   nginx:alpine
 ```
 
-`127.0.0.1:8080:80` 的含义是：
+`127.0.0.1:8080:80` means:
 
-| 部分 | 含义 |
+| Part | Meaning |
 |---|---|
-| `127.0.0.1` | 只绑定宿主环境的本地回环地址 |
-| `8080` | 对外发布的端口 |
-| `80` | 容器中的服务端口 |
+| `127.0.0.1` | Bind only to the host environment's loopback address |
+| `8080` | The published port |
+| `80` | The service port inside the container |
 
-从 macOS 访问并查看发布关系：
+Access it from macOS and check the published mapping:
 
 ```bash
 curl http://localhost:8080
 docker port web-lab
 ```
 
-可以看到类似输出：
+The output looks similar to:
 
 ```text
 80/tcp -> 127.0.0.1:8080
 ```
 
-而位于同一个 `lab-net` 中的 `net-a` 可以直接访问容器名称和内部端口：
+Meanwhile, `net-a`, which is on the same `lab-net`, can reach the container directly by name and internal port:
 
 ```bash
 docker exec net-a wget -qO- http://web-lab:80
 ```
 
-两条路径并不相同：
+The two paths are not the same:
 
-| 来源 | 请求地址 | 是否依赖本次 `-p` |
+| Source | Request address | Depends on this `-p`? |
 |---|---|---|
-| macOS | `localhost:8080` | 是 |
-| `net-a` | `web-lab:80` | 否 |
+| macOS | `localhost:8080` | Yes |
+| `net-a` | `web-lab:80` | No |
 
-在普通 Linux Docker 宿主机上，入站端口映射常由 DNAT 等机制参与实现；在 OrbStack 中，还需要处理 macOS 与 Linux 虚拟环境之间的端口转发。
+On a regular Linux Docker host, inbound port mapping is commonly implemented with mechanisms such as DNAT; in OrbStack, port forwarding between macOS and the Linux virtual environment also has to be handled.
 
-最后可以查看访问日志并停止实验容器：
+Finally, view the access log and stop the lab container:
 
 ```bash
 docker logs web-lab
 docker stop web-lab
 ```
 
-由于创建时使用了 `--rm`，容器停止后会自动删除。
+Because the container was created with `--rm`, it is removed automatically once it stops.
 
-## 9. 从目的反推命令
+## 9. Working Backward from the Goal to the Command
 
-经过这些实验，我更愿意先问“要改变哪一类资源”，再寻找具体参数：
+After these experiments, I prefer to ask first "which kind of resource do I want to change?" and only then look for the specific option:
 
-| 目的 | Docker 功能 | 常用命令 |
+| Goal | Docker feature | Common commands |
 |---|---|---|
-| 访问宿主机目录 | Bind Mount | `docker run --mount` |
-| 持久化应用数据 | Volume | `docker volume`、`--mount` |
-| 创建虚拟局域网 | Bridge Network | `docker network create` |
-| 让容器接入网络 | Network attachment | `docker run --network`、`docker network connect` |
-| 查看网络配置 | Inspect | `docker network inspect` |
-| 容器主动访问公网 | Routing + SNAT | 通常由普通 Bridge 网络自动配置 |
-| 外部访问容器服务 | Port Mapping | `docker run -p` |
-| 创建容器及主进程 | Run | `docker run` |
-| 在已有容器中执行程序 | Exec | `docker exec` |
-| 查看状态与输出 | Observe | `docker ps`、`docker logs`、`docker inspect` |
+| Access a host directory | Bind mount | `docker run --mount` |
+| Persist application data | Volume | `docker volume`, `--mount` |
+| Create a virtual LAN | Bridge network | `docker network create` |
+| Attach a container to a network | Network attachment | `docker run --network`, `docker network connect` |
+| Inspect network configuration | Inspect | `docker network inspect` |
+| Let a container reach the internet | Routing + SNAT | Usually configured automatically by a regular bridge network |
+| Let external clients reach a container service | Port mapping | `docker run -p` |
+| Create a container and its main process | Run | `docker run` |
+| Run a program in an existing container | Exec | `docker exec` |
+| Check status and output | Observe | `docker ps`, `docker logs`, `docker inspect` |
 
-实验全部结束后，可以清理本次创建的容器和网络：
+When all the experiments are done, clean up the containers and network created along the way:
 
 ```bash
 docker stop net-a net-b net-c
@@ -423,29 +425,29 @@ docker rm net-a net-b net-c
 docker network rm lab-net
 ```
 
-命名 Volume `mydata` 被设计为独立于容器保留。如果确认其中的数据不再需要，再用 `docker volume rm mydata` 删除，而不是把删除 Volume 当作容器清理的默认步骤。
+The named volume `mydata` is designed to outlive containers. Delete it with `docker volume rm mydata` only after confirming its data is no longer needed; removing volumes should not be a default step of container cleanup.
 
-## 10. 最终形成的认知
+## 10. The Resulting Understanding
 
-Docker 没有重新实现文件系统和 TCP/IP，而是把 Linux 已有机制组合成方便管理的容器环境：
+Docker does not reimplement filesystems or TCP/IP; it combines existing Linux mechanisms into container environments that are easy to manage:
 
 ```text
 Linux Kernel
      │
-     ├── Namespace：隔离 PID、Mount、Network 等资源视图
-     ├── Cgroup：限制、统计和调度进程组的资源使用
-     ├── Filesystem：OverlayFS、Bind Mount、Volume、tmpfs
-     └── Networking：veth、Bridge、Routing、NAT、Port Mapping
+     ├── Namespace: isolates views of resources such as PIDs, mounts, and networks
+     ├── Cgroup: limits, accounts for, and schedules resource usage of process groups
+     ├── Filesystem: OverlayFS, bind mounts, volumes, tmpfs
+     └── Networking: veth, bridges, routing, NAT, port mapping
 ```
 
-这次实践让我把抽象概念对应到了具体行为：
+This hands-on work let me map abstract concepts to concrete behavior:
 
-- Bind Mount 说明容器可以通过新的路径访问共享文件，而不是必须复制数据。
-- 根目录与 `/proc` 的挂载结果说明，容器目录树由不同文件系统共同组成。
-- Ping 与 Netcat 说明，隔离的 Network Namespace 可以通过虚拟设备重新连接。
-- 公网访问说明，私有 IP 可以借助路由和地址转换访问外部网络。
-- Port Mapping 说明，容器不必拥有直接对外地址，也能接收从外部发起的连接。
+- Bind mounts show that a container can access shared files through a new path instead of having to copy data.
+- The mount output for `/` and `/proc` shows that a container's directory tree is composed of different filesystems.
+- Ping and Netcat show that isolated network namespaces can be reconnected through virtual devices.
+- Internet access shows that private IP addresses can reach external networks through routing and address translation.
+- Port mapping shows that a container can accept externally initiated connections without having a directly reachable address of its own.
 
-我最终形成的学习方法是：**先明确自己希望容器获得什么环境，再找到 Docker 的配置方式，从容器内外观察结果，最后把现象还原到底层机制。**
+The learning method I ended up with is: **first decide what environment I want the container to have, then find how Docker configures it, observe the result from inside and outside the container, and finally trace the behavior back to the underlying mechanism.**
 
-Docker 命令不必全部背下来。知道自己正在配置文件系统、网络还是进程，再通过 `--help` 查具体参数，通常比死记命令更可靠。
+There is no need to memorize every Docker command. Knowing whether I am configuring the filesystem, the network, or processes, and then looking up the specific options with `--help`, is usually more reliable than rote memorization.
