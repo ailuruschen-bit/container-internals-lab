@@ -1,6 +1,6 @@
 # 技術学習ノート
 
-[中文](README.md) | [English](README.en.md) | **日本語**
+[English](README.md) | [中文](README.zh.md) | **日本語**
 
 学習の過程で本当に心を動かされた小さな疑問や小さな実験、そしてその時点での理解を記録している。
 
@@ -13,8 +13,11 @@
 - [Linux のファイルシステム、マウント、Mount Namespace について学んだこと](notes/ja/where-is-container-root-filesystem.md)
 - [Namespace は見え方を隔離し、Cgroup は使用量を制限する](notes/ja/namespace-views-and-cgroup-limits.md)
 - [Linux コンテナネットワークの仕組み：Network Namespace から NAT まで](notes/ja/linux-container-networking.md)
+- [Docker 基本操作の実践：マウントとネットワークをカーネルの仕組みに対応づける](notes/ja/docker-mount-and-network-practice.md)
+- [Docker イメージの基本操作：まずはイメージを確認する](notes/ja/docker-image-basics.md)
+- [なぜコンテナ化が必要なのか](notes/ja/why-containerize-applications.md)
 
-原文は中国語で書かれており、英語版と日本語版はその翻訳である。
+すべてのノートは英語・中国語・日本語で読める。
 
 ## 過去のコンテンツ
 

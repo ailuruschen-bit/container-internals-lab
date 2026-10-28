@@ -1,6 +1,6 @@
 # Namespace は見え方を隔離し、Cgroup は使用量を制限する
 
-[中文](../namespace-views-and-cgroup-limits.md) | [English](../en/namespace-views-and-cgroup-limits.md) | **日本語**
+[English](../namespace-views-and-cgroup-limits.md) | [中文](../zh/namespace-views-and-cgroup-limits.md) | **日本語**
 
 Namespace を理解したあと、ひとつ疑問が湧いた。コンテナからはすでに外部のプロセス、ファイルシステム、ネットワーク環境が見えないのに、なぜ Cgroup まで必要なのか。
 

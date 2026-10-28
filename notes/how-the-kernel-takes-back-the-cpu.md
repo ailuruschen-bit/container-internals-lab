@@ -1,85 +1,85 @@
-# CPU 是怎样被操作系统“抢回来”的？
+# How Does the Operating System Take Back the CPU?
 
-**中文** | [English](en/how-the-kernel-takes-back-the-cpu.md) | [日本語](ja/how-the-kernel-takes-back-the-cpu.md)
+**English** | [中文](zh/how-the-kernel-takes-back-the-cpu.md) | [日本語](ja/how-the-kernel-takes-back-the-cpu.md)
 
-单个 CPU 核心在同一时刻只能执行一条指令流。如果一个进程始终占着 CPU，其他进程就没有运行的机会。操作系统必须能在必要时取回控制权，再决定接下来运行哪个进程。
+A single CPU core can execute only one instruction stream at a time. If one process held on to the CPU indefinitely, no other process would ever get a chance to run. The operating system must be able to regain control when necessary and then decide which process runs next.
 
-## 只靠普通跳转，操作系统拿不回 CPU
+## Ordinary Jumps Alone Cannot Hand the CPU Back to the OS
 
-CPU 并不知道自己正在运行哪个“进程”。它只是在当前寄存器状态下，不断取出并执行 PC（程序计数器）指向的指令。
+The CPU has no idea which "process" it is running. It simply keeps fetching and executing the instruction that the PC (program counter) points to, under the current register state.
 
-程序可以用跳转、函数调用和返回等指令修改 PC，但这些跳转仍由当前程序主动执行。假如一个用户程序既不调用操作系统，也不主动交出 CPU，只靠这种软件控制流，内核就没有机会重新获得执行权。
+A program can change the PC with jumps, function calls, and returns, but these instructions are still executed voluntarily by the running program itself. If a user program neither calls into the operating system nor gives up the CPU on its own, software control flow alone never gives the kernel a chance to regain execution.
 
-这需要一种不依赖当前程序配合的入口：**中断与异常机制**。下文把从当前程序受控转入内核的过程统称为 trap。不同处理器对 trap 这个词的分类并不完全一致，这里只把它当作便于理解的总称。
+What is needed is an entry point that does not depend on the running program's cooperation: the **interrupt and exception mechanism**. In what follows, I use *trap* as an umbrella term for any controlled transfer from the running program into the kernel. Processor architectures do not classify "trap" consistently, so the word serves here only as a convenient shorthand.
 
-## 硬件提供了一条预先登记的“紧急入口”
+## Hardware Provides Pre-Registered "Emergency Entrances"
 
-可以把中断机制想成 CPU 内部的一组“紧急入口”。普通程序沿自己的指令流前进；外设或定时器只能发出中断请求，不能直接把 PC 改成任意地址。CPU 通常在完成当前指令后检查并接受请求，再沿着内核预先登记的入口转入处理程序。
+Think of the interrupt mechanism as a set of "emergency entrances" built into the CPU. An ordinary program proceeds along its own instruction stream. A device or timer can only raise an interrupt request; it cannot set the PC to an arbitrary address directly. The CPU typically checks for and accepts a pending request after finishing the current instruction, then enters a handler through an entry point that the kernel registered in advance.
 
-具体来说，处理器会按照内核配置的中断向量表：
+Specifically, following the interrupt vector table configured by the kernel, the processor:
 
-1. 保存返回所需的最小现场，例如原来的 PC 和状态寄存器；
-2. 必要时切换到内核权限级和内核栈；
-3. 从向量表找到对应的内核入口；
-4. 把控制流转交给入口代码。
+1. Saves the minimum state needed to return, such as the original PC and status register;
+2. Switches to the kernel privilege level and the kernel stack, if necessary;
+3. Looks up the corresponding kernel entry point in the vector table;
+4. Transfers control to the entry code.
 
-其中，保存现场、改变权限级和跳到入口等关键步骤由处理器自动完成，但入口地址和处理规则早已由内核配置。进入入口以后，执行的就是操作系统代码。
+The critical steps (saving state, changing the privilege level, and jumping to the entry point) are performed automatically by the processor, but the entry addresses and handling rules have already been configured by the kernel. From the entry point onward, it is operating system code that runs.
 
-## 三种常见的进入原因
+## Three Common Reasons for Entering the Kernel
 
-| 类型 | 何时发生 | 例子 |
+| Type | When it occurs | Examples |
 |---|---|---|
-| Interrupt（中断） | 与当前指令异步，由外部硬件发出 | 定时器到期、网卡收到数据 |
-| System call（系统调用） | 程序执行专用指令，主动请求内核服务 | `read()`、`write()`、`fork()` |
-| Exception（异常） | 执行当前指令时同步触发 | 缺页、除零、非法指令 |
+| Interrupt | Asynchronously to the current instruction; raised by external hardware | Timer expiry, NIC receiving data |
+| System call | The program executes a dedicated instruction to request a kernel service | `read()`, `write()`, `fork()` |
+| Exception | Synchronously, while the current instruction executes | Page fault, division by zero, illegal instruction |
 
-**Interrupt 并不等于周期性进入内核。** 网卡、磁盘等设备也会产生不定期中断；只有其中的定时器中断可能周期性出现。现代 Linux 还可能使用无周期时钟，因此“周期性”不是中断机制本身的必备属性。
+**An interrupt does not mean entering the kernel periodically.** Devices such as NICs and disks raise interrupts at irregular times; only timer interrupts may recur periodically. Modern Linux can also run without a periodic tick (tickless operation), so periodicity is not an inherent property of the interrupt mechanism.
 
-系统调用可以理解为程序主动进入内核，但在具体硬件上不一定走和外部中断完全相同的指令与入口。例如现代 x86-64 通常使用 `syscall` 指令。
+A system call can be understood as the program entering the kernel voluntarily, but on real hardware it does not necessarily use the same instruction or entry point as an external interrupt. Modern x86-64, for example, typically uses the `syscall` instruction.
 
-异常也不一定意味着程序出错。缺页异常可能只是说明所需页面尚未装入，内核处理后可以让原指令重新执行。
+Nor does an exception necessarily mean the program has a bug. A page fault may simply indicate that the required page has not been loaded yet; after the kernel handles it, the original instruction can be executed again.
 
-## 进入内核，不等于一定切换进程
+## Entering the Kernel Does Not Necessarily Mean Switching Processes
 
-这是最容易混淆的一点：**trap 只让 CPU 进入内核，是否切换进程由调度器决定。**
+This is the point most easily confused: **a trap only brings the CPU into the kernel; whether to switch processes is up to the scheduler.**
 
-例如网卡产生中断后，内核处理完数据，很可能继续返回刚才的进程。一次系统调用如果很快完成，也可以直接返回原进程。只有当前进程不应继续运行，或者另一个进程更适合运行时，调度器才会进行上下文切换。
+For example, after a NIC raises an interrupt and the kernel finishes processing the data, it will quite likely return to the process that was running. A system call that completes quickly can also return straight to the original process. The scheduler performs a context switch only when the current process should not keep running, or when another process is a better candidate to run.
 
-常见机会包括：
+Common opportunities include:
 
-- 定时器到期，内核发现当前进程已经运行了足够长时间；
-- 当前进程执行 `read()` 等系统调用，因为等待数据而阻塞；
-- 某个更高优先级的进程被唤醒；
-- 当前进程主动让出 CPU。
+- The timer fires and the kernel finds that the current process has run long enough;
+- The current process makes a system call such as `read()` and blocks waiting for data;
+- A higher-priority process is woken up;
+- The current process voluntarily yields the CPU.
 
-## 一次抢占式切换大致发生了什么
+## What Happens in a Preemptive Switch
 
-假设单核 CPU 正在运行进程 A，同时进程 B 也处于可运行状态：
+Suppose a single-core CPU is running process A, and process B is also runnable:
 
 ```text
-进程 A 的用户代码
+Process A user code
     │
-    │ 定时器发出中断请求
+    │ Timer raises an interrupt request
     ▼
-CPU 自动保存返回现场并进入内核入口
+CPU automatically saves return state and enters the kernel entry point
     │
-    │ 内核处理中断，调度器决定改运行 B
+    │ Kernel handles the interrupt; scheduler decides to run B instead
     ▼
-保存 A 的上下文，恢复 B 的上下文
+Save A's context, restore B's context
     │
-    │ 从内核返回用户态
+    │ Return from the kernel to user mode
     ▼
-进程 B 从上次停下的位置继续执行
+Process B resumes where it last left off
 ```
 
-上下文不仅包含 PC，还包括栈指针、通用寄存器以及与地址空间相关的状态。以后再次选中 A 时，内核恢复这些状态，A 就像只是“暂停了一会儿”。
+The context includes not only the PC but also the stack pointer, the general-purpose registers, and address-space-related state. When A is selected again later, the kernel restores this state, and A behaves as if it had merely "paused for a moment."
 
-因此，定时器中断为内核提供了**不依赖进程自愿配合**的控制权回收机会，调度器则利用这个机会决定要不要换人。两者共同构成了抢占式多任务的重要基础，但定时器中断并不是发生调度的唯一入口。
+The timer interrupt therefore gives the kernel a chance to reclaim control **without relying on the process's voluntary cooperation**, and the scheduler uses that chance to decide whether to switch. Together they form an essential foundation of preemptive multitasking, but the timer interrupt is not the only path that leads to scheduling.
 
-## 我现在的理解
+## My Current Understanding
 
-可以把整个机制压缩成一句话：
+The whole mechanism can be condensed into one sentence:
 
-> CPU 通过硬件定义的中断、异常或系统调用入口受控地进入内核；内核处理进入原因，并在需要时由调度器保存当前进程、恢复另一个进程，从而让多个进程轮流获得执行机会。
+> The CPU enters the kernel in a controlled way through hardware-defined entry points for interrupts, exceptions, and system calls; the kernel handles the reason for entry and, when needed, the scheduler saves the current process and restores another, so that multiple processes take turns getting to run.
 
-这里真正要分开的，是三个动作：**进入内核、作出调度决定、执行上下文切换**。它们经常连续发生，但并不是同一件事。
+What really needs to be kept apart are three actions: **entering the kernel, making a scheduling decision, and performing a context switch.** They often happen back to back, but they are not the same thing.

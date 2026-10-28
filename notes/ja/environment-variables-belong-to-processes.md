@@ -1,6 +1,6 @@
 # 環境変数は誰のものか
 
-[中文](../environment-variables-belong-to-processes.md) | [English](../en/environment-variables-belong-to-processes.md) | **日本語**
+[English](../environment-variables-belong-to-processes.md) | [中文](../zh/environment-variables-belong-to-processes.md) | **日本語**
 
 シェルでは `NAME=Tom` と書くことも、`export NAME=Tom` と書くこともできる。同じ内容を `.bashrc` や `/etc/environment` に書くこともできる。どれも「変数を設定している」ように見えるが、変数を誰が保持するのか、子プロセスに引き継がれるのか、いつ消えるのかはそれぞれ異なる。
 

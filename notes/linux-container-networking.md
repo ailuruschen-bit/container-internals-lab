@@ -1,50 +1,50 @@
-# Linux 容器网络底层原理：从 Network Namespace 到 NAT
+# How Linux Container Networking Works: From Network Namespaces to NAT
 
-**中文** | [English](en/linux-container-networking.md) | [日本語](ja/linux-container-networking.md)
+**English** | [中文](zh/linux-container-networking.md) | [日本語](ja/linux-container-networking.md)
 
-容器网络看起来像一套独立的小型网络：容器有自己的网卡、IP、路由和端口，还能与其他容器及互联网通信。
+Container networking looks like a small, self-contained network: a container has its own network interface, IP address, routes, and ports, and it can communicate with other containers and with the internet.
 
-Docker 并没有重新实现 TCP/IP 协议栈。它主要是在组合 Linux 内核已有的 Network Namespace、veth、Bridge、路由和 Netfilter 等机制。
+Docker does not reimplement the TCP/IP stack. It mostly composes mechanisms the Linux kernel already provides: network namespaces, veth pairs, bridges, routing, and Netfilter.
 
-## 1. Network Namespace：独立的网络环境
+## 1. Network Namespaces: An Independent Network Environment
 
-同一个 Linux 内核管理的进程，为什么可以拥有不同的网络环境？
+How can processes managed by the same Linux kernel have different network environments?
 
-Network Namespace（NetNS）隔离了与网络有关的一组内核资源，包括：
+A network namespace (netns) isolates a set of network-related kernel resources, including:
 
-- 网络接口与 IP 地址；
-- IPv4、IPv6 协议栈；
-- 路由表；
-- 防火墙规则；
-- Socket 使用的端口空间；
-- `/proc/net`、`/sys/class/net` 等网络视图。
+- network interfaces and IP addresses;
+- the IPv4 and IPv6 protocol stacks;
+- routing tables;
+- firewall rules;
+- the port space used by sockets;
+- network views such as `/proc/net` and `/sys/class/net`.
 
-因此，两个进程可以分别在自己的 NetNS 中监听 `0.0.0.0:80`，不会因为端口相同而冲突。
+As a result, two processes can each listen on `0.0.0.0:80` in their own netns without conflicting over the same port.
 
-NetNS 可以类比成一台计算机的独立网络上下文。不过，新建 NetNS 只会得到一套隔离的网络环境，不会自动获得外部连接。它最初通常只有回环接口 `lo`，还需要配置网络接口、IP 和路由。
+A netns can be likened to the independent networking context of a computer. However, creating a new netns only yields an isolated network environment; it does not automatically come with external connectivity. Initially it usually contains nothing but the loopback interface `lo`, and network interfaces, IP addresses, and routes still need to be configured.
 
-## 2. veth Pair：连接不同网络环境的虚拟网线
+## 2. veth Pairs: Virtual Cables Between Network Environments
 
-不同 NetNS 的网络资源已经相互隔离，它们怎样建立连接？
+If the network resources of different network namespaces are isolated from each other, how do they connect?
 
-veth Pair 是一对相连的虚拟以太网接口。数据从一端发送后，会由内核交给另一端接收：
+A veth pair is a pair of connected virtual Ethernet interfaces. Whatever is sent from one end is delivered by the kernel to the other end:
 
 ```text
 NetNS A                         NetNS B
   veth-a  ◄──────────────────►  veth-b
 ```
 
-两端可以被分别放进不同的 NetNS。数据传输完全由 Linux 内核完成，不需要经过真实物理网卡。
+The two ends can be placed in different network namespaces. The transfer is handled entirely by the Linux kernel and never touches a physical NIC.
 
-把它类比成“虚拟网线”很直观，但更完整的理解是：veth Pair 同时包含网线两端的虚拟网络接口。每一端都有自己的接口名称、MAC 地址和统计信息。
+Calling it a "virtual cable" is intuitive, but a more complete picture is that a veth pair includes the virtual network interfaces at both ends of the cable. Each end has its own interface name, MAC address, and statistics.
 
-Docker 通常把一端放进容器的 NetNS，并在容器中将它命名为 `eth0`；另一端留在宿主机的 NetNS，接入 Linux Bridge。
+Docker typically moves one end into the container's netns, where it is renamed `eth0`, and leaves the other end in the host's netns, attached to a Linux bridge.
 
-## 3. Linux Bridge：连接多个容器的虚拟交换机
+## 3. Linux Bridges: A Virtual Switch for Multiple Containers
 
-一对 veth 只能连接两个端点。如果多个容器都要接入同一网络，就需要一个能够连接多个接口的设备。
+A single veth pair can connect only two endpoints. If several containers need to join the same network, a device that can connect many interfaces is required.
 
-Linux Bridge 是内核实现的虚拟二层交换机。宿主机一侧的多个 veth 接口可以接入同一个 Bridge：
+A Linux bridge is a virtual Layer 2 switch implemented in the kernel. Multiple host-side veth interfaces can be attached to the same bridge:
 
 ```text
 Container A                     Container B
@@ -54,9 +54,9 @@ Container A                     Container B
     └──────── Linux Bridge ─────────┘
 ```
 
-Bridge 会学习帧的源 MAC 地址，并根据目标 MAC 地址决定从哪个端口转发。目标未知或属于广播时，它会向其他适当端口转发。
+The bridge learns the source MAC addresses of incoming frames and uses the destination MAC address to decide which port to forward a frame out of. When the destination is unknown or the frame is a broadcast, it floods the frame to the other appropriate ports.
 
-如果两个容器位于同一个 Bridge 网络、IP 和子网配置正确，它们通常可以直接通过 Bridge 通信，不需要经过 NAT：
+If two containers are on the same bridge network and their IP addresses and subnets are configured correctly, they can usually communicate directly through the bridge without any NAT:
 
 ```text
 Container A
@@ -66,78 +66,78 @@ Container A
     → Container B
 ```
 
-Bridge 本身工作在二层，但宿主机通常还会为 Bridge 接口配置一个 IP。这个 IP 可以成为容器默认路由中的网关地址，使数据从容器网络进入宿主机的三层路由系统。
+A bridge itself operates at Layer 2, but the host usually also assigns an IP address to the bridge interface. That address can serve as the gateway in the container's default route, letting traffic leave the container network and enter the host's Layer 3 routing system.
 
-## 4. 路由与 NAT：容器如何访问外部网络
+## 4. Routing and NAT: How Containers Reach External Networks
 
-容器使用的内部 IP 通常不会被外部网络直接路由。以 Docker Bridge 网络常见的默认 `nat` 模式为例，宿主机会承担网关和地址转换的角色。
+The internal IP addresses used by containers are usually not directly routable from external networks. In the default `nat` mode commonly used by Docker bridge networks, the host takes on the role of gateway and address translator.
 
-容器向互联网发包时，路径大致如下：
+When a container sends a packet to the internet, the path looks roughly like this:
 
 ```text
-容器 eth0
-    → veth Pair
+Container eth0
+    → veth pair
     → Linux Bridge
-    → 宿主机 IP 路由
+    → Host IP routing
     → Netfilter MASQUERADE / SNAT
-    → 宿主机外部网卡
+    → Host external NIC
     → Internet
 ```
 
-这里需要两类能力：
+Two capabilities are involved here:
 
-1. **路由转发**：宿主机把数据包从容器 Bridge 转发到外部接口。
-2. **源地址转换**：将容器的内部源地址改写成宿主机对外使用的地址，必要时同时改写源端口。
+1. **Forwarding**: the host forwards packets from the container bridge to an external interface.
+2. **Source address translation**: the container's internal source address is rewritten to an address the host uses externally, with the source port also rewritten when necessary.
 
-当宿主机外部地址可能变化时，通常使用 MASQUERADE；它可以理解为自动选择出口接口地址的一种 SNAT。
+When the host's external address may change, MASQUERADE is typically used; it can be understood as a form of SNAT that automatically picks the address of the outgoing interface.
 
-Netfilter 的连接跟踪系统 Conntrack 会记录连接及地址转换状态。外部响应返回后，内核根据这份状态恢复原来的目标信息，再将数据包路由回正确的容器。多个容器因此可以共享宿主机的对外 IP。
+Netfilter's connection tracking system, conntrack, records each connection and its translation state. When the external response comes back, the kernel uses this state to restore the original destination and routes the packet back to the correct container. This is how multiple containers can share the host's external IP address.
 
-NAT 不是容器联网的必备条件。如果外部网络已经知道怎样路由到容器网段，也可以使用直接路由。Docker Bridge 网络也支持 `routed` 等网关模式；这里讨论的是最常见的默认 NAT 模型。
+NAT is not a prerequisite for container networking. If the external network already knows how to route to the container subnet, direct routing can be used instead. Docker bridge networks also support other gateway modes such as `routed`; what is discussed here is the most common, default NAT model.
 
-## 5. Port Mapping：允许外部访问容器服务
+## 5. Port Mapping: Letting External Clients Reach Container Services
 
-出站 NAT 主要解决容器主动建立连接的问题。如果外部客户端只知道宿主机地址，怎样主动访问容器中的服务？
+Outbound NAT mainly addresses connections that a container initiates. But if an external client knows only the host's address, how can it initiate a connection to a service inside a container?
 
-Docker 的端口发布可以预先建立宿主机地址与容器地址之间的转发关系：
+Docker's port publishing sets up, in advance, a forwarding relationship between a host address and a container address:
 
 ```bash
 docker run -p 8080:80 nginx
 ```
 
-它表示将宿主机的 `8080` 端口发布到容器的 `80` 端口。在 Linux 上的默认 NAT 模式中，典型入站路径是：
+This publishes port `8080` on the host to port `80` in the container. In the default NAT mode on Linux, the typical inbound path is:
 
 ```text
-客户端
-    → 宿主机 IP:8080
+Client
+    → Host IP:8080
     → Netfilter DNAT
-    → 容器 IP:80
+    → Container IP:80
     → Linux Bridge
-    → veth Pair
-    → 容器服务
+    → veth pair
+    → Container service
 ```
 
-DNAT 修改入站数据包的目标地址和端口，转发规则允许数据包通过，Conntrack 则保证响应沿正确的反向转换路径返回。根据访问来源和 Docker 配置，实际实现还可能涉及额外的 Netfilter 规则或用户态代理。
+DNAT rewrites the destination address and port of inbound packets, forwarding rules allow the packets through, and conntrack ensures that responses return along the correct reverse translation path. Depending on where the traffic comes from and how Docker is configured, the actual implementation may also involve additional Netfilter rules or a userland proxy.
 
-Port Mapping 与 Conntrack 的职责不同：
+Port mapping and conntrack have different responsibilities:
 
-- Port Mapping 预先定义“宿主机的哪个端口转到哪个容器服务”。
-- Conntrack 动态记录每一条实际连接及其转换状态。
+- Port mapping defines in advance which host port is forwarded to which container service.
+- Conntrack dynamically records every actual connection and its translation state.
 
-如果 `-p` 没有指定宿主机 IP，端口通常会绑定到所有宿主机地址。是否能从外部访问，还会受到宿主机防火墙、路由和云平台安全规则的影响。
+If `-p` does not specify a host IP, the port is usually bound on all host addresses. Whether it is actually reachable from outside also depends on the host firewall, routing, and cloud-platform security rules.
 
-## 6. Docker 如何组合这些机制
+## 6. How Docker Puts These Mechanisms Together
 
-典型的 Linux Bridge 网络可以画成：
+A typical Linux bridge network can be drawn like this:
 
 ```text
                          Internet
                             │
-                    宿主机外部网络接口
+                Host external network interface
                             │
                   IP Routing / Netfilter NAT
                             │
-             Linux Bridge（例如 docker0）
+             Linux Bridge (e.g., docker0)
                      /               \
                host veth          host veth
                    │                  │
@@ -148,62 +148,63 @@ Port Mapping 与 Conntrack 的职责不同：
           172.17.0.2           172.17.0.3
 ```
 
-三种典型通信场景可以整理为：
+The three typical communication scenarios can be summarized as follows:
 
-| 场景 | 主要机制 |
+| Scenario | Main mechanisms |
 |---|---|
-| 容器 A → 容器 B | veth Pair + Linux Bridge |
-| 容器 A → Internet | veth Pair + Bridge + 路由 + MASQUERADE/SNAT |
-| Internet → 容器 A 服务 | Port Mapping + DNAT + 路由 + Bridge + veth Pair |
+| Container A → Container B | veth pair + Linux bridge |
+| Container A → Internet | veth pair + bridge + routing + MASQUERADE/SNAT |
+| Internet → service in Container A | Port mapping + DNAT + routing + bridge + veth pair |
 
-它们分别回答了三个问题：
+Each mechanism answers one question:
 
 ```text
-NetNS 隔离后怎样接出去？       → veth Pair
-多个容器怎样接入同一个网络？   → Linux Bridge
-内部地址怎样访问或被外部访问？ → 路由、NAT 与端口发布
+How does an isolated netns connect to the outside?   → veth pair
+How do multiple containers join the same network?    → Linux bridge
+How do internal addresses reach, or get reached by,
+the outside world?                                   → Routing, NAT, and port publishing
 ```
 
-在 macOS 的 Docker Desktop 上，容器和这些 Linux 网络机制运行在隐藏的 Linux 虚拟机中。macOS 到虚拟机、再到容器的端口访问还会经过 Docker Desktop 提供的转发层，因此不能直接把 macOS 当作原生 Linux Docker 宿主机观察所有接口和 Netfilter 规则。
+With Docker Desktop on macOS, containers and all of these Linux networking mechanisms run inside a hidden Linux virtual machine. Port access from macOS to the VM and on to a container also passes through a forwarding layer provided by Docker Desktop, so you cannot treat macOS as a native Linux Docker host and inspect every interface and Netfilter rule directly.
 
-## 7. 与 AWS VPC 网络的关联
+## 7. Relating This to AWS VPC Networking
 
-Linux 容器网络和 AWS VPC 不在同一个实现层级，但可以通过它们解决的问题建立联系：
+Linux container networking and AWS VPCs sit at different levels of implementation, but they can be related through the problems they solve:
 
-| AWS 组件 | 主要作用 |
+| AWS component | Main role |
 |---|---|
-| NAT Gateway | 让私有子网中的资源主动访问外部 IPv4 网络，并接收对应响应 |
-| Internet Gateway | 作为 VPC 路由表中的互联网目标；满足地址和路由条件时支持公网通信 |
-| ALB / NLB | 通过监听器接收入站连接，并将流量分发给目标组中的后端服务 |
-| Interface Endpoint | 通过 PrivateLink 和子网中的私有 IP 访问支持的服务 |
-| Gateway Endpoint | 通过路由表私有访问 S3、DynamoDB |
+| NAT gateway | Lets resources in private subnets initiate connections to external IPv4 networks and receive the corresponding responses |
+| Internet gateway | Serves as the internet target in VPC route tables; enables public communication when addressing and routing requirements are met |
+| ALB / NLB | Accepts inbound connections through listeners and distributes traffic to backend services in target groups |
+| Interface endpoint | Provides access to supported services through PrivateLink, using private IP addresses in your subnets |
+| Gateway endpoint | Provides private access to S3 and DynamoDB through route tables |
 
-### NAT Gateway 与 Docker 出站 NAT
+### NAT Gateways vs. Docker's Outbound NAT
 
-二者都解决“内部私有地址主动访问外部网络”的问题，并允许响应流量返回。但 AWS NAT Gateway 是云平台托管的网络服务，不是 Docker 在单台 Linux 主机上配置的 Netfilter 规则。
+Both address the same problem, letting internal private addresses initiate connections to external networks and allowing the response traffic back in. However, an AWS NAT gateway is a managed network service run by the cloud platform, not a set of Netfilter rules that Docker configures on a single Linux host.
 
-NAT Gateway 不提供任意的公网入站端口转发。需要公开服务时，AWS 通常使用带公网地址的资源或 ALB、NLB 等入口。
+A NAT gateway does not provide arbitrary inbound port forwarding from the internet. To expose a service publicly, AWS typically relies on resources with public addresses or on entry points such as an ALB or NLB.
 
-### Internet Gateway 不是单独生效的开关
+### An Internet Gateway Is Not a Switch That Works on Its Own
 
-把 Internet Gateway 连接到 VPC 并不代表所有实例立即可以访问互联网。还需要正确的路由表；对于 IPv4，实例通常还需要公有 IPv4 地址或 Elastic IP。安全组和网络 ACL 也必须允许相应流量。
+Attaching an internet gateway to a VPC does not mean every instance can immediately reach the internet. The route tables must be configured correctly, and for IPv4 an instance usually also needs a public IPv4 address or an Elastic IP address. Security groups and network ACLs must also allow the relevant traffic.
 
-### VPC Endpoint 与 Port Mapping
+### VPC Endpoints vs. Port Mapping
 
-Interface Endpoint 不是公网服务入口。它通过子网中的弹性网络接口和私有 IP，让 VPC 内的客户端私有访问 AWS 服务或 PrivateLink 服务。
+An interface endpoint is not a public entry point for a service. It uses elastic network interfaces with private IP addresses in your subnets to let clients in the VPC privately access AWS services or PrivateLink-powered services.
 
-Gateway Endpoint 则通过路由表把访问 S3、DynamoDB 的流量导向端点。两类 VPC Endpoint 都是在避免经过公网入口或 NAT；它们与“把宿主机端口转发到容器端口”的 Port Mapping 不是同一种机制。
+A gateway endpoint, by contrast, uses route tables to steer traffic destined for S3 or DynamoDB to the endpoint. Both kinds of VPC endpoints are about avoiding a public entry point or NAT; neither is the same mechanism as port mapping, which forwards a host port to a container port.
 
-## 我现在的理解
+## My Current Understanding
 
-Linux 容器网络是一套由内核虚拟设备和网络功能组合出来的基础设施：
+Linux container networking is infrastructure assembled from virtual devices and networking features in the kernel:
 
 ```text
-Network Namespace  ≈ 独立的网络上下文
-veth Pair          ≈ 虚拟网线及其两端接口
-Linux Bridge       ≈ 二层交换机
-Routing + NAT      ≈ 网关的路由和地址转换
-Port Mapping       ≈ 预先配置的入站端口转发
+Network Namespace  ≈ an independent networking context
+veth Pair          ≈ a virtual cable plus the interfaces at both ends
+Linux Bridge       ≈ a Layer 2 switch
+Routing + NAT      ≈ a gateway's routing and address translation
+Port Mapping       ≈ preconfigured inbound port forwarding
 ```
 
-容器不需要独占物理网卡，也不需要独立的 Linux 内核，就能拥有独立的 IP、路由和端口空间。Docker 的作用，是把这些 Linux 机制按照容器生命周期自动创建、连接、配置并回收。
+A container can have its own IP address, routes, and port space without monopolizing a physical NIC and without a separate Linux kernel. Docker's role is to automatically create, connect, configure, and clean up these Linux mechanisms in step with the container lifecycle.

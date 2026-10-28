@@ -1,6 +1,6 @@
 # OS はどのように CPU を「取り戻す」のか
 
-[中文](../how-the-kernel-takes-back-the-cpu.md) | [English](../en/how-the-kernel-takes-back-the-cpu.md) | **日本語**
+[English](../how-the-kernel-takes-back-the-cpu.md) | [中文](../zh/how-the-kernel-takes-back-the-cpu.md) | **日本語**
 
 1 つの CPU コアが同時に実行できる命令の流れは 1 つだけである。あるプロセスが CPU を占有し続ければ、ほかのプロセスには実行の機会が回ってこない。OS には、必要なときに制御を取り戻し、次にどのプロセスを実行するかを決める仕組みが欠かせない。
 

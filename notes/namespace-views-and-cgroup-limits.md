@@ -1,146 +1,146 @@
-# Namespace 隔离视图，Cgroup 限制用量
+# Namespaces Isolate the View; Cgroups Limit the Usage
 
-**中文** | [English](en/namespace-views-and-cgroup-limits.md) | [日本語](ja/namespace-views-and-cgroup-limits.md)
+**English** | [中文](zh/namespace-views-and-cgroup-limits.md) | [日本語](ja/namespace-views-and-cgroup-limits.md)
 
-理解 Namespace 之后，我产生了一个问题：既然容器已经看不到外部的进程、文件系统和网络环境，为什么还需要 Cgroup？
+Once I understood namespaces, a question came up: if a container already cannot see the processes, filesystems, and network outside it, why does it still need cgroups?
 
-答案是，两者解决的并不是同一类问题：
+The answer is that the two solve different kinds of problems:
 
 ```text
-Namespace  决定一组进程能够看到和操作哪些资源
-Cgroup     统计并限制一组进程能够使用多少资源
+Namespace  decides which resources a group of processes can see and act on
+Cgroup     accounts for and limits how much of a resource a group of processes can use
 ```
 
-## Namespace 隔离的是资源视图
+## Namespaces Isolate the View of Resources
 
-进程看到的 PID、挂载树、网络设备、主机名等内容，本来就是 Linux 内核为进程提供的抽象视图。Namespace 让不同进程使用不同的视图：
+The PIDs, mount tree, network devices, hostname, and so on that a process sees are, to begin with, abstractions that the Linux kernel presents to the process. Namespaces let different processes use different views:
 
-- PID Namespace 让容器只看到自身范围内的进程编号。
-- Mount Namespace 让容器看到独立的挂载关系。
-- Network Namespace 让容器拥有独立的网卡、IP 和路由表。
+- A PID namespace lets a container see only the process IDs within its own scope.
+- A mount namespace gives a container its own set of mount relationships.
+- A network namespace gives a container its own network interfaces, IP addresses, and routing table.
 
-这种隔离不只是修改显示结果。例如 Network Namespace 中的路由表和虚拟网卡，确实是内核分别维护的资源实例。不过，它们仍然由同一个 Linux 内核管理，底层 CPU 和内存也仍然来自同一台机器。
+This isolation is not merely a matter of changing what gets displayed. For example, the routing tables and virtual network interfaces in different network namespaces really are separate resource instances maintained by the kernel. Even so, they are still managed by the same Linux kernel, and the underlying CPU and memory still come from the same machine.
 
-所以，一个容器即使看不到宿主机上的其他进程，也可能耗尽整台机器的内存或长期占用 CPU。Namespace 没有解决这个问题。
+So even if a container cannot see any other process on the host, it can still exhaust the entire machine's memory or monopolize the CPU for long periods. Namespaces do nothing to prevent that.
 
-## Cgroup 是进程的资源账户
+## A Cgroup Is a Resource Account for Processes
 
-Cgroup 是 Control Group 的缩写。它把进程组织成组，再由不同的 controller 对这些进程进行资源统计、调度和限制。
+Cgroup is short for *control group*. Cgroups organize processes into groups, and individual controllers then account for, schedule, and limit the resources those processes use.
 
-常见的 controller 包括：
+Common controllers include:
 
-| Controller | 作用 |
+| Controller | Purpose |
 |---|---|
-| `cpu` | 设置 CPU 调度权重或时间配额 |
-| `memory` | 统计并限制内存使用 |
-| `pids` | 限制进程和线程数量 |
-| `io` | 统计并限制块设备 I/O |
-| `cpuset` | 指定可以使用哪些 CPU 和内存节点 |
+| `cpu` | Sets CPU scheduling weights or time quotas |
+| `memory` | Accounts for and limits memory usage |
+| `pids` | Limits the number of processes and threads |
+| `io` | Accounts for and limits block-device I/O |
+| `cpuset` | Specifies which CPUs and memory nodes may be used |
 
-例如，`memory.max=512M` 的含义不是提前划出一块专属内存，而是这组进程的内存使用量合计不能超过这个上限。Cgroup 更像一个带有统计和预算规则的资源账户，而不是一台缩小的虚拟计算机。
+For example, `memory.max=512M` does not mean that a dedicated block of memory is carved out in advance; it means the combined memory usage of the processes in the group must not exceed this ceiling. A cgroup is better thought of as a resource account with usage tracking and budget rules than as a scaled-down virtual computer.
 
-## Cgroup v2 是一棵统一的树
+## Cgroup v2 Is a Single Unified Tree
 
-现代 Linux 主要使用 Cgroup v2。所有 Cgroup 节点组成一棵统一的层级树：
+Modern Linux primarily uses cgroup v2, in which all cgroup nodes form a single, unified hierarchy:
 
 ```text
 /
 ├── system.slice
 │   ├── docker.service
-│   │   ├── container-a  ← 一组容器进程
-│   │   └── container-b  ← 另一组容器进程
+│   │   ├── container-a  ← one group of container processes
+│   │   └── container-b  ← another group of container processes
 │   └── ssh.service
 └── user.slice
     └── user-1000.slice
-        └── shell        ← Shell 进程
+        └── shell        ← shell process
 ```
 
-在普通的 Cgroup v2 进程模型中，每个进程在同一时刻只属于这棵树中的一个 Cgroup 节点。进程创建子进程时，子进程最初继承父进程的 Cgroup；把 PID 写入另一个节点的 `cgroup.procs`，则会把整个进程移动过去。
+In the standard cgroup v2 process model, each process belongs to exactly one cgroup node in this tree at any given time. When a process creates a child, the child initially inherits its parent's cgroup. Writing a PID to another node's `cgroup.procs` file moves the entire process to that node:
 
 ```bash
 echo 1234 > /sys/fs/cgroup/service-b/cgroup.procs
 ```
 
-进程虽然只直接属于一个节点，却会同时受到当前节点和祖先节点规则的约束：
+Although a process belongs directly to only one node, it is constrained simultaneously by the rules of that node and of all its ancestors:
 
 ```text
-apps                 所有应用合计最多使用 4 GB
-└── service-a        当前服务最多使用 1 GB
-    └── 进程 1234
+apps                 all applications combined may use at most 4 GB
+└── service-a        this service may use at most 1 GB
+    └── process 1234
 ```
 
-子节点只能进一步收紧限制，不能突破祖先已经设定的上限。
+A child node can only tighten a limit further; it can never exceed a ceiling already set by an ancestor.
 
-为了避免父节点中的进程与子节点竞争同一份资源，Cgroup v2 对普通 domain controller 还有一条结构规则：非根节点如果要把 controller 下放给子节点，通常需要先把自己的进程移动到子节点中。因此实际的管理树常把进程放在叶子节点，把中间节点用于组织和分配资源。
+To prevent processes in a parent node from competing with its child nodes for the same resources, cgroup v2 also imposes a structural rule for regular domain controllers: before a non-root node can delegate a controller to its children, it generally must first move its own processes into child nodes. In practice, therefore, management trees tend to place processes in leaf nodes and use intermediate nodes for organizing and distributing resources.
 
-## 一个节点只需要启用部分 Controller
+## A Node Needs Only Some of the Controllers
 
-Controller 是内核提供的资源控制功能，不从属于某一个 Cgroup 节点。Cgroup 节点决定自己能够使用哪些 controller，以及把哪些 controller 继续提供给子节点。
+Controllers are resource-control features provided by the kernel; they do not belong to any particular cgroup node. Each cgroup node determines which controllers it can use and which ones it passes down to its children.
 
-两个文件容易混淆：
+Two files are easily confused:
 
 ```text
-cgroup.controllers       当前节点有哪些 controller 可供下放
-cgroup.subtree_control   当前节点实际向直接子节点启用了哪些 controller
+cgroup.controllers       controllers available in this node, which it may pass down
+cgroup.subtree_control   controllers this node has actually enabled for its direct children
 ```
 
-例如，根节点支持：
+For example, suppose the root node supports:
 
 ```text
 cpu memory pids io
 ```
 
-但它可以只向下启用：
+It can still choose to enable only some of them downward:
 
 ```bash
 echo "+cpu +memory" > /sys/fs/cgroup/cgroup.subtree_control
 ```
 
-这样直接子节点可以配置 CPU 和内存控制，却不能在自己的子树中使用尚未下放的 `pids` 和 `io` controller。资源控制遵循自上而下的规则：父节点没有提供的 controller，子节点不能凭空启用。
+The direct children can then configure CPU and memory control, but they cannot use the `pids` and `io` controllers, which have not been passed down, anywhere in their subtrees. Resource control follows a top-down rule: a child cannot enable a controller that its parent has not made available to it.
 
-因此：
+Therefore:
 
 ```text
-进程有 Cgroup 归属
+A process belongs to a cgroup
         ≠
-所有资源都设置了具体限额
+Every resource has a concrete limit
 ```
 
-一个进程可以属于 `/app/service`，但如果沿途没有设置 `memory.max`，它就没有一个由该 Cgroup 树指定的内存硬上限。
+A process can belong to `/app/service`, but if `memory.max` is not set anywhere along that path, the cgroup tree imposes no hard memory ceiling on it.
 
-## `/proc/self/cgroup` 表示什么
+## What `/proc/self/cgroup` Shows
 
-可以查看当前进程的 Cgroup 归属：
+You can check which cgroup the current process belongs to:
 
 ```bash
 cat /proc/self/cgroup
 ```
 
-我在实验环境中看到的是：
+In my lab environment, this printed:
 
 ```text
 0::/.lxc
 ```
 
-每一行的格式是：
+Each line has the format:
 
 ```text
-层级 ID : Controller 列表 : Cgroup 路径
+hierarchy ID : controller list : cgroup path
 ```
 
-在 Cgroup v2 中，所有 controller 使用统一层级，因此通常显示为：
+In cgroup v2, all controllers share a single unified hierarchy, so the line usually looks like this:
 
 ```text
 0::<path>
 ```
 
-`0` 表示统一层级，中间字段不再列出分散的 controller，`/.lxc` 是当前 Cgroup Namespace 视角下的路径。外层宿主机看到的完整路径可能更长。
+The `0` denotes the unified hierarchy, the middle field no longer lists individual controllers, and `/.lxc` is the path as seen from the current cgroup namespace. The full path seen from the outer host may be longer.
 
-Cgroup v1 可以为不同 controller 建立不同层级，因此一个进程可能在 `/proc/self/cgroup` 中出现多行，并在 CPU、Memory 等层级中拥有不同路径。Cgroup v2 正是把这些 controller 统一到了一棵树中。
+Cgroup v1 allows a separate hierarchy for each controller, so a single process may appear on several lines in `/proc/self/cgroup`, with different paths in the CPU, memory, and other hierarchies. Cgroup v2 is precisely what unified these controllers into a single tree.
 
-## Docker 如何使用 Cgroup
+## How Docker Uses Cgroups
 
-Docker 创建容器时，会把容器进程放入对应的 Cgroup，并将启动参数转化为内核资源规则：
+When Docker creates a container, it places the container's processes in a corresponding cgroup and translates the launch options into kernel resource rules:
 
 ```bash
 docker run \
@@ -150,26 +150,26 @@ docker run \
     nginx
 ```
 
-在 Cgroup v2 中，可以建立大致对应关系：
+Under cgroup v2, the options map roughly as follows:
 
 ```text
-Docker 参数          Cgroup 控制接口
+Docker option        Cgroup interface
 --memory=512m   →    memory.max
 --cpus=0.5      →    cpu.max
 --pids-limit    →    pids.max
 ```
 
-Docker 没有重新实现 CPU 调度和内存限制，而是在组织好容器进程后，配置 Linux 内核已有的 Cgroup 机制。
+Docker does not reimplement CPU scheduling or memory limits. After organizing the container's processes, it configures the cgroup mechanisms that the Linux kernel already provides.
 
-## 我现在的理解
+## My Current Understanding
 
-Namespace 与 Cgroup 可以这样区分：
+Namespaces and cgroups can be told apart like this:
 
 ```text
-Namespace  隔离或虚拟化进程看到的资源视图
-Cgroup     对进程组的真实资源使用进行统计、调度和限额
+Namespace  isolates or virtualizes the view of resources that processes see
+Cgroup     accounts for, schedules, and caps the actual resource usage of a process group
 ```
 
-两者结合后，容器中的进程既像处于独立环境中，又不能无限制地消耗宿主机资源。但它们仍然只是同一个 Linux 内核管理的普通进程。
+Combined, they make a container's processes look as if they live in an independent environment, while preventing them from consuming the host's resources without limit. Yet they remain ordinary processes managed by the same Linux kernel.
 
-还需要保留一个边界：Namespace 和 Cgroup 不是完整的安全体系。容器通常还会结合 rootfs、Capabilities、Seccomp 等机制，进一步约束进程能够访问的文件和执行的操作。
+One boundary is worth keeping in mind: namespaces and cgroups are not a complete security model. Containers usually also rely on mechanisms such as the root filesystem (rootfs), capabilities, and seccomp to further restrict which files processes can access and which operations they can perform.

@@ -1,22 +1,24 @@
-# 技术学习笔记
+# Technical Learning Notes
 
-**中文** | [English](README.en.md) | [日本語](README.ja.md)
+**English** | [中文](README.zh.md) | [日本語](README.ja.md)
 
-这里记录学习过程中真正触动我的小问题、小实验和阶段性理解。
+This repository records the small questions, small experiments, and evolving understanding that genuinely struck me while learning.
 
-不追求一次搭好完整的知识体系。每篇笔记只讲清一个当时想明白的问题，之后随着理解变化继续修正。
+It does not try to build a complete body of knowledge in one go. Each note explains one question clearly, as I understood it at the time, and is revised as my understanding changes.
 
-## 笔记
+## Notes
 
-- [环境变量到底属于谁？](notes/environment-variables-belong-to-processes.md)
-- [CPU 是怎样被操作系统“抢回来”的？](notes/how-the-kernel-takes-back-the-cpu.md)
-- [Linux 文件系统、Mount 与 Mount Namespace 学习心得](notes/where-is-container-root-filesystem.md)
-- [Namespace 隔离视图，Cgroup 限制用量](notes/namespace-views-and-cgroup-limits.md)
-- [Linux 容器网络底层原理：从 Network Namespace 到 NAT](notes/linux-container-networking.md)
-- [Docker 基础实操：把 Mount 与 Network 对应到内核机制](notes/docker-mount-and-network-practice.md)
-- [Docker Image 基础操作：先学会查看镜像](notes/docker-image-basics.md)
-- [我为什么需要容器化？](notes/why-containerize-applications.md)
+- [Who Owns an Environment Variable?](notes/environment-variables-belong-to-processes.md)
+- [How Does the Operating System Take Back the CPU?](notes/how-the-kernel-takes-back-the-cpu.md)
+- [Linux Filesystems, Mounts, and Mount Namespaces: What I Learned](notes/where-is-container-root-filesystem.md)
+- [Namespaces Isolate the View; Cgroups Limit the Usage](notes/namespace-views-and-cgroup-limits.md)
+- [How Linux Container Networking Works: From Network Namespaces to NAT](notes/linux-container-networking.md)
+- [Hands-On Docker Basics: Mapping Mounts and Networks to Kernel Mechanisms](notes/docker-mount-and-network-practice.md)
+- [Docker Image Basics: Learning to Inspect Images First](notes/docker-image-basics.md)
+- [Why Do I Need Containerization?](notes/why-containerize-applications.md)
 
-## 旧内容
+Every note is available in English, Chinese, and Japanese.
 
-此前按章节组织的容器底层文章与实验，完整保存在分支 `archive/structured-container-course-2026-10-18`。
+## Archived Content
+
+The earlier articles and labs on container internals, organized by chapter, are preserved in full on the `archive/structured-container-course-2026-10-18` branch.

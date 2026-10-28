@@ -1,6 +1,6 @@
 # Linux のファイルシステム、マウント、Mount Namespace について学んだこと
 
-[中文](../where-is-container-root-filesystem.md) | [English](../en/where-is-container-root-filesystem.md) | **日本語**
+[English](../where-is-container-root-filesystem.md) | [中文](../zh/where-is-container-root-filesystem.md) | **日本語**
 
 ## 1. Linux のディレクトリツリーを捉え直す
 

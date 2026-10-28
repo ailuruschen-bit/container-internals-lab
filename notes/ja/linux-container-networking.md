@@ -1,6 +1,6 @@
 # Linux コンテナネットワークの仕組み：Network Namespace から NAT まで
 
-[中文](../linux-container-networking.md) | [English](../en/linux-container-networking.md) | **日本語**
+[English](../linux-container-networking.md) | [中文](../zh/linux-container-networking.md) | **日本語**
 
 コンテナのネットワークは、一見すると独立した小さなネットワークのように見える。コンテナは自分専用のネットワークインターフェース、IP アドレス、ルート、ポートを持ち、ほかのコンテナやインターネットとも通信できる。
 

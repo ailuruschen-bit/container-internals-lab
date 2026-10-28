@@ -1,159 +1,159 @@
-# Linux 文件系统、Mount 与 Mount Namespace 学习心得
+# Linux Filesystems, Mounts, and Mount Namespaces: What I Learned
 
-**中文** | [English](en/where-is-container-root-filesystem.md) | [日本語](ja/where-is-container-root-filesystem.md)
+**English** | [中文](zh/where-is-container-root-filesystem.md) | [日本語](ja/where-is-container-root-filesystem.md)
 
-## 1. 对 Linux 目录树的重新认识
+## 1. Rethinking the Linux Directory Tree
 
-过去习惯于 Windows 资源管理器的图形化视角，很容易形成一种认知：操作系统中存在一棵固定的目录树，所有进程都在这棵树中访问和操作文件。
+Coming from the graphical view of Windows Explorer, it is easy to assume that an operating system has a single, fixed directory tree in which every process accesses and manipulates files.
 
-但 Linux 的实际模型并非如此：
+Linux does not actually work that way:
 
-- 根目录 `/` 不等于某块物理磁盘。
-- 一棵完整的目录树可以由多个文件系统组合而成。
-- 不同进程不一定看到相同的目录树。
-- 某些目录对应磁盘上的真实数据，另一些目录则由内核动态提供内容。
+- The root directory `/` is not the same thing as a physical disk.
+- A complete directory tree can be assembled from multiple filesystems.
+- Different processes do not necessarily see the same directory tree.
+- Some directories correspond to real data on disk, while others have their contents generated dynamically by the kernel.
 
-例如：
+For example:
 
 ```text
 /
-├── etc/      普通文件系统
-├── home/     普通文件系统
-├── proc/     procfs 虚拟文件系统
-└── sys/      sysfs 虚拟文件系统
+├── etc/      regular filesystem
+├── home/     regular filesystem
+├── proc/     procfs (virtual filesystem)
+└── sys/      sysfs (virtual filesystem)
 ```
 
-因此，Linux 的目录树是内核通过文件系统和挂载机制组织出的逻辑视图，而不是一棵固定存在的物理树。
+The Linux directory tree is therefore a logical view that the kernel builds out of filesystems and the mount mechanism, not a physical tree that exists in some fixed form.
 
-## 2. Mount 与 Mount Namespace
+## 2. Mounts and Mount Namespaces
 
-### Mount（挂载）
+### Mount
 
-Mount 的作用是将一个文件系统接入现有目录树的某个位置。
+Mounting attaches a filesystem to the existing directory tree at a given location.
 
-例如：
+For example:
 
 ```bash
 mount /dev/sdb1 /data
 ```
 
-这条命令表示将 `/dev/sdb1` 上的文件系统挂载到 `/data`。此后访问 `/data` 时，内核就会按照这条挂载关系进入对应的文件系统。
+This command mounts the filesystem on `/dev/sdb1` at `/data`. From then on, whenever `/data` is accessed, the kernel follows this mount relationship into the corresponding filesystem.
 
-挂载不会复制文件内容，而是建立目录树中的路径与文件系统之间的关联。
+Mounting copies no file contents. It only establishes an association between a path in the directory tree and a filesystem.
 
-### Mount Namespace（挂载命名空间）
+### Mount Namespace
 
-Mount Namespace 可以理解为一组进程共享的挂载关系视图。
+A mount namespace can be thought of as a view of mount relationships shared by a group of processes.
 
-Linux 宿主机上的普通进程通常位于初始 Mount Namespace 中，容器进程则可以使用独立的 Mount Namespace：
+Ordinary processes on a Linux host usually live in the initial mount namespace, while container processes can use a mount namespace of their own:
 
 ```text
 Namespace A          Namespace B
     /                     /
     └── data/             └── data/
          │                     │
-     文件系统 X             文件系统 Y
+    Filesystem X          Filesystem Y
 ```
 
-两个进程访问相同的 `/data` 路径，却可以进入不同的文件系统。
+Two processes accessing the same path, `/data`, can end up in different filesystems.
 
-需要注意：
+Points to keep in mind:
 
-- Namespace 不会自动复制底层文件系统。
-- Namespace 不会自动改变进程的根目录。
-- 不同 Namespace 可以引用相同的底层文件资源。
-- 挂载事件是否传播到其他 Namespace，还取决于 `shared`、`private` 等挂载传播属性。
+- A namespace does not automatically copy the underlying filesystem.
+- A namespace does not automatically change a process's root directory.
+- Different namespaces can reference the same underlying file resources.
+- Whether a mount event propagates to other namespaces also depends on mount propagation types such as `shared` and `private`.
 
-## 3. 进程的 root 与 cwd
+## 3. A Process's `root` and `cwd`
 
-Linux 内核为进程维护两个重要的文件系统上下文属性：
+The Linux kernel maintains two important filesystem-context attributes for each process:
 
-- `root`：绝对路径解析的起点。
-- `cwd`：相对路径解析的起点。
+- `root`: the starting point for resolving absolute paths.
+- `cwd`: the starting point for resolving relative paths.
 
-它们通常从父进程继承。
+Both are normally inherited from the parent process.
 
-例如：
+For example:
 
 ```bash
 cd /home/user
 ```
 
-这会改变 Shell 进程的 `cwd`。
+This changes the shell process's `cwd`.
 
-而下面的系统调用会将进程的 `root` 改为 `/some/rootfs`，使它之后解析绝对路径时从这里开始：
+The following system call, on the other hand, changes the process's `root` to `/some/rootfs`, so that absolute paths are resolved from there from then on:
 
 ```c
 chroot("/some/rootfs");
 ```
 
-`chroot` 只改变路径解析的起点，本身不是完整的安全隔离机制。容器运行时还会结合 Mount Namespace、挂载配置、权限限制以及 `pivot_root` 等机制准备容器环境。
+`chroot` changes only the starting point of path resolution; on its own, it is not a complete security isolation mechanism. Container runtimes also combine mount namespaces, mount configuration, privilege restrictions, and mechanisms such as `pivot_root` to prepare the container environment.
 
-因此，需要区分三个独立概念：
+Three independent concepts therefore need to be kept apart:
 
 ```text
-root             绝对路径解析起点
-cwd              相对路径解析起点
-Mount Namespace  可见的文件系统挂载关系
+root             starting point for absolute paths
+cwd              starting point for relative paths
+Mount Namespace  the visible set of filesystem mounts
 ```
 
-即使两个进程属于同一个 Mount Namespace，也可以拥有不同的 `root` 和 `cwd`。反过来，即使两个进程都把自己的根目录称为 `/`，它们看到的文件系统内容也可能不同。
+Two processes in the same mount namespace can still have different `root` and `cwd` values. Conversely, even if two processes both call their root directory `/`, the filesystem contents they see may differ.
 
-## 4. OverlayFS 与 Docker 容器根目录
+## 4. OverlayFS and the Docker Container's Root Directory
 
-Overlay 的含义是叠加、覆盖。OverlayFS 可以将多个目录层合并成统一的文件系统视图。
+"Overlay" means to lay one thing over another. OverlayFS merges multiple directory layers into a single, unified filesystem view.
 
-它主要包含：
+Its main components are:
 
-- `lowerdir`：一个或多个基础层，通常作为只读层使用。
-- `upperdir`：可写层，保存新增和修改的文件。
-- `workdir`：OverlayFS 内部操作所需的工作目录。
-- `merged`：挂载完成后呈现给使用者的合并视图。
+- `lowerdir`: one or more base layers, typically used as read-only layers.
+- `upperdir`: the writable layer, which stores new and modified files.
+- `workdir`: a working directory that OverlayFS needs for its internal operations.
+- `merged`: the merged view presented to users once the mount is in place.
 
 ```text
 lowerdir ──┐
-           ├── OverlayFS ── merged ── 容器 /
+           ├── OverlayFS ── merged ── container /
 upperdir ──┘
 ```
 
-查找文件时，OverlayFS 会先考虑 `upperdir`，再查找 `lowerdir`。如果上下层存在同名目录，它们还可能被合并显示。
+When looking up a file, OverlayFS checks `upperdir` first and then `lowerdir`. Directories with the same name in both layers may also be merged in the resulting view.
 
-当容器需要修改只存在于 `lowerdir` 中的文件时，OverlayFS 通常先把文件复制到 `upperdir`，再修改上层副本。这就是 Copy-on-Write（写时复制）。
+When a container needs to modify a file that exists only in `lowerdir`, OverlayFS typically copies the file up to `upperdir` first and then modifies that upper copy. This is Copy-on-Write (CoW).
 
-Docker 容器通常拥有各自的可写层，因此多个容器可以共享镜像基础层，同时隔离各自的修改。容器进程看到的是 OverlayFS 合并后的目录树，不需要知道某个文件实际来自哪一层。
+Each Docker container usually gets its own writable layer, so multiple containers can share an image's base layers while keeping their own changes isolated. A container process sees the directory tree as merged by OverlayFS and does not need to know which layer a given file actually comes from.
 
-另外，容器中的 `/proc` 并不是复制出来的一套内核状态。容器运行时会在容器的挂载视图中挂载 procfs，同一个 Linux 内核再根据该 procfs 对应的 PID Namespace 展示进程信息。
+Note also that `/proc` inside a container is not a copied set of kernel state. The container runtime mounts procfs in the container's mount view, and the same Linux kernel presents process information according to the PID namespace associated with that procfs instance.
 
-因此，容器中的进程可以看到自己是 PID 1，而宿主机仍然使用另一个 PID 标识同一个进程。两边读取的都是内核维护的进程对象，只是看到的 PID 和进程范围不同。
+This is why a process inside a container can see itself as PID 1 while the host identifies the very same process by a different PID. Both sides read the same process objects maintained by the kernel; they simply see different PIDs and a different set of processes.
 
-## 5. 最终认知模型
+## 5. The Resulting Mental Model
 
-Linux 内核管理着底层文件系统资源，以及将这些资源接入目录树的挂载关系。进程再通过自己的文件系统上下文解析路径：
+The Linux kernel manages the underlying filesystem resources, as well as the mount relationships that attach those resources to the directory tree. Each process then resolves paths through its own filesystem context:
 
 ```text
-Linux 内核
+Linux kernel
     │
-    ├── 底层文件系统资源
+    ├── Underlying filesystem resources
     │     ├── ext4
     │     ├── OverlayFS
     │     ├── procfs
     │     └── sysfs
     │
-    └── Mount Namespace
+    └── Mount Namespaces
           │
-          ├── 挂载关系视图 A
-          │      └── 进程 A（root / cwd）
+          ├── Mount view A
+          │      └── Process A (root / cwd)
           │
-          └── 挂载关系视图 B
-                 └── 进程 B（root / cwd）
+          └── Mount view B
+                 └── Process B (root / cwd)
 ```
 
-关键认识：
+Key takeaways:
 
-1. 目录树不是所有进程必须共享的一棵固定物理树。
-2. Mount 负责建立文件系统与目录树之间的挂载关系。
-3. Mount Namespace 让不同进程组拥有不同的挂载关系视图。
-4. `root` 和 `cwd` 决定进程解析路径的起点。
-5. Docker 将 Mount Namespace、根目录切换和 OverlayFS 等机制结合起来，为容器进程提供独立的文件系统环境。
+1. The directory tree is not a single, fixed physical tree that every process must share.
+2. Mounts establish the relationship between filesystems and the directory tree.
+3. Mount namespaces give different groups of processes different views of the mount relationships.
+4. `root` and `cwd` determine where a process starts resolving paths.
+5. Docker combines mount namespaces, root directory switching, OverlayFS, and other mechanisms to give container processes an independent filesystem environment.
 
-**容器的文件系统隔离，本质上不是复制一台完整的计算机，而是通过同一个 Linux 内核，为不同进程组织出不同的文件系统视图。**
+**At its core, container filesystem isolation does not copy an entire computer. It uses one and the same Linux kernel to present different filesystem views to different groups of processes.**
