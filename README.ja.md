@@ -16,8 +16,9 @@
 - [Docker 基本操作の実践：マウントとネットワークをカーネルの仕組みに対応づける](notes/ja/docker-mount-and-network-practice.md)
 - [Docker イメージの基本操作：まずはイメージを確認する](notes/ja/docker-image-basics.md)
 - [なぜコンテナ化が必要なのか](notes/ja/why-containerize-applications.md)
+- [Docker イメージのビルド実践（1）：Hello World](notes/ja/docker-image-build-hello-world.md)
 
-すべてのノートは英語・中国語・日本語で読める。
+英語版と日本語版は、ノートの追加に合わせて順次補充していく。
 
 ## 過去のコンテンツ
 

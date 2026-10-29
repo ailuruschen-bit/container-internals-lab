@@ -16,8 +16,9 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 - [Hands-On Docker Basics: Mapping Mounts and Networks to Kernel Mechanisms](notes/docker-mount-and-network-practice.md)
 - [Docker Image Basics: Learning to Inspect Images First](notes/docker-image-basics.md)
 - [Why Do I Need Containerization?](notes/why-containerize-applications.md)
+- [Building Docker Images in Practice (1): Hello World](notes/docker-image-build-hello-world.md)
 
-Every note is available in English, Chinese, and Japanese.
+English and Japanese versions are added progressively as new notes are written.
 
 ## Archived Content
 
