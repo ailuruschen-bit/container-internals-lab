@@ -16,8 +16,9 @@
 - [Docker 基础实操：把 Mount 与 Network 对应到内核机制](notes/zh/docker-mount-and-network-practice.md)
 - [Docker Image 基础操作：先学会查看镜像](notes/zh/docker-image-basics.md)
 - [我为什么需要容器化？](notes/zh/why-containerize-applications.md)
+- [Docker Image 构建实操（一）：Hello World](notes/zh/docker-image-build-hello-world.md)
 
-所有笔记均提供英文、中文和日文版本。
+英文和日文译文会随笔记逐步补充。
 
 ## 旧内容
 
