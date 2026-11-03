@@ -17,6 +17,7 @@
 - [Docker Image 基础操作：先学会查看镜像](notes/zh/docker-image-basics.md)
 - [我为什么需要容器化？](notes/zh/why-containerize-applications.md)
 - [Docker Image 构建实操（一）：Hello World](notes/zh/docker-image-build-hello-world.md)
+- [Docker Image 构建实操（二）：定制 Nginx 首页](notes/zh/docker-image-build-nginx.md)
 
 英文和日文译文会随笔记逐步补充。
 
