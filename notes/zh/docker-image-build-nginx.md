@@ -1,5 +1,7 @@
 # Docker Image 构建实操（二）：定制 Nginx 首页
 
+[English](../docker-image-build-nginx.md) | **中文** | [日本語](../ja/docker-image-build-nginx.md)
+
 上一次从 `alpine` 开始构建了一个最小的 Hello World 镜像。这一次不再从通用 Linux 基础镜像开始安装软件，而是直接以 `nginx:alpine` 为基础，构建自己的 Nginx Web Image。
 
 这次 Dockerfile 只有两条指令，却让我更清楚地理解了两个问题：子镜像怎样继承基础镜像的运行配置，以及 `COPY` 怎样在不修改基础镜像的情况下改变最终文件系统视图。

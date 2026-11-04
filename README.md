@@ -17,6 +17,8 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 - [Docker Image Basics: Learning to Inspect Images First](notes/docker-image-basics.md)
 - [Why Do I Need Containerization?](notes/why-containerize-applications.md)
 - [Building Docker Images in Practice (1): Hello World](notes/docker-image-build-hello-world.md)
+- [Building Docker Images in Practice (2): Customizing the Nginx Home Page](notes/docker-image-build-nginx.md)
+- [Building Docker Images in Practice (3): Cache, ARG/ENV, and .dockerignore](notes/docker-image-build-cache-args-ignore.md)
 
 English and Japanese versions are added progressively as new notes are written.
 

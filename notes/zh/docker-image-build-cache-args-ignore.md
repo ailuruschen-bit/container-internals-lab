@@ -1,5 +1,7 @@
 # Docker Image 构建实操（三）：缓存、ARG/ENV 与 .dockerignore
 
+[English](../docker-image-build-cache-args-ignore.md) | **中文** | [日本語](../ja/docker-image-build-cache-args-ignore.md)
+
 前两次实验解决了“怎样构建一个镜像”。这一次继续观察构建过程本身：Docker 为什么能加快重复构建、怎样向构建阶段和运行阶段传递不同的变量，以及怎样控制 Build Context 中有哪些文件。
 
 这三个实验看似独立，实际都在影响同一件事：**哪些输入参与镜像构建，以及输入变化后哪些步骤需要重新执行。**
