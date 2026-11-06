@@ -1,6 +1,6 @@
-# Docker Image 构建实操（四）：Java 与 Multi-stage Build（进行中）
+# Docker Image 构建实操（四）：Java 与 Multi-stage Build
 
-今天开始构建 Java 应用镜像。实验还没有全部结束，这篇先记录目前完成的两部分：先在一个镜像中完成编译与运行，再使用 Multi-stage Build 把编译环境和运行环境分开。
+这轮实验开始构建 Java 应用镜像：先在一个镜像中完成编译与运行，再使用 Multi-stage Build 把编译环境和运行环境分开，最后继续观察 `ENTRYPOINT` 的参数传递，并把同样的构建方法应用到一个最小 Spring Boot 项目。
 
 这次最直观的变化是，Dockerfile 不再只是复制一个现成程序，而是开始承担真正的构建工作。
 
@@ -299,4 +299,299 @@ Multi-stage Build 则让不同阶段使用不同的 Base Image：编译阶段选
 
 它带来的价值不只是镜像更小，也让最终运行环境更接近真正需要的内容：没有源码、编译器和其他只在构建时使用的文件，构建职责与运行职责更加清楚。
 
-今天的 Java 容器构建实验还没有全部结束。后续完成剩余部分后，再继续补充到这篇笔记中。
+在这个基础上，我继续把 Java 启动命令从 `CMD` 移到 `ENTRYPOINT`，并尝试构建实际的 Spring Boot 项目。
+
+## 8. 用 `ENTRYPOINT` 固定 Java 启动程序
+
+前一个版本使用：
+
+```dockerfile
+CMD ["java", "-jar", "app.jar"]
+```
+
+如果在镜像名称后继续传入参数，这些参数会直接替换整个 `CMD`：
+
+```bash
+docker run --rm java-lab:v2 hello
+```
+
+此时 Docker 会尝试把 `hello` 当成容器要执行的程序，而不是把它交给 `app.jar`。
+
+为了固定 Java 程序本身，同时保留可变参数，可以把 Dockerfile 改成：
+
+```dockerfile
+ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["default"]
+```
+
+这两项使用 Exec Form 时，默认启动命令可以理解为：
+
+```text
+ENTRYPOINT                         CMD
+["java", "-jar", "app.jar"]  +  ["default"]
+                    │
+                    ▼
+java -jar app.jar default
+```
+
+`ENTRYPOINT` 固定要运行的程序，`CMD` 在这里提供默认参数。
+
+### 使用默认参数
+
+```bash
+docker run --rm java-lab:v3
+```
+
+本机实验输出：
+
+```text
+Java application started!
+Argument: default
+```
+
+### 在 `docker run` 中传入新参数
+
+```bash
+docker run --rm java-lab:v3 Codex
+```
+
+输出变成：
+
+```text
+Java application started!
+Argument: Codex
+```
+
+镜像名称后面的 `Codex` 替换了 `CMD ["default"]`，再作为参数追加给原有的 Exec Form `ENTRYPOINT`：
+
+```text
+java -jar app.jar Codex
+```
+
+因此，更准确的说法不是“`docker run` 后面的内容总会传给 Java”，而是：
+
+> 镜像具有 Exec Form `ENTRYPOINT` 时，运行命令提供的参数会替换 `CMD`，并作为参数交给 `ENTRYPOINT`。
+
+## 9. 使用 `--entrypoint` 覆盖默认入口
+
+如果连默认程序也要替换，可以使用：
+
+```bash
+docker run --rm \
+  --entrypoint java \
+  java-lab:v3 \
+  -version
+```
+
+这次容器执行的是：
+
+```text
+java -version
+```
+
+而不是：
+
+```text
+java -jar app.jar default
+```
+
+`--entrypoint java` 为这次新容器覆盖镜像中的 `ENTRYPOINT`。使用这个选项时，镜像原有的 `CMD` 不会再自动追加；镜像名称后的 `-version` 成为新入口的参数。
+
+这里的“覆盖”和“清除 CMD”都发生在本次容器配置中，并不会修改原来的 `java-lab:v3` Image。下一次正常运行该镜像，仍然会使用原有的 `ENTRYPOINT` 与 `CMD`。
+
+如果要检查镜像中保存的两项配置，可以执行：
+
+```bash
+docker image inspect java-lab:v3 \
+  -f 'Entrypoint={{json .Config.Entrypoint}} Cmd={{json .Config.Cmd}}'
+```
+
+本机结果是：
+
+```text
+Entrypoint=["java","-jar","app.jar"] Cmd=["default"]
+```
+
+### `CMD` 与 `ENTRYPOINT` 的当前理解
+
+| 配置 | 在本次实验中的职责 |
+|---|---|
+| `ENTRYPOINT` | 固定容器主要执行的 Java 程序 |
+| `CMD` | 为入口程序提供可替换的默认参数 |
+| 镜像名后的参数 | 替换 `CMD`，交给默认 `ENTRYPOINT` |
+| `--entrypoint` | 为本次容器替换默认入口，原 `CMD` 不再自动参与 |
+
+这种组合适合“程序固定、参数经常变化”的镜像。它并不意味着所有镜像都必须同时使用 `ENTRYPOINT` 和 `CMD`，仍然要根据希望用户覆盖程序还是只覆盖参数来决定。
+
+## 10. 把 Multi-stage Build 用到 Spring Boot
+
+完成普通 Java JAR 的实验后，我又构建了一个最小 Spring Boot 项目。
+
+Spring Boot 项目不再直接调用 `javac` 和 `jar`，而是通过 Maven 解析依赖、编译源码、运行构建生命周期并生成可执行 JAR。因此，构建阶段选择带有 Maven 和 JDK 的基础镜像，运行阶段仍然只使用 JRE。
+
+项目结构可以简化为：
+
+```text
+spring-lab/
+├── Dockerfile
+├── pom.xml
+└── src/
+    └── main/
+        ├── java/
+        └── resources/
+```
+
+对应的 Dockerfile 大致是：
+
+```dockerfile
+FROM maven:3.9-eclipse-temurin-21 AS build
+
+WORKDIR /build
+
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY --from=build /build/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+这仍然是前面已经理解的两个阶段：
+
+```text
+Maven + JDK Build Stage
+    ├── 读取 pom.xml
+    ├── 下载依赖
+    ├── 编译 Spring Boot 项目
+    └── target/*.jar
+                 │
+                 │ COPY --from=build
+                 ▼
+JRE Runtime Stage
+    ├── app.jar
+    └── java -jar app.jar
+```
+
+## 11. 为什么先复制 `pom.xml` 再复制源码
+
+构建阶段没有一开始就执行 `COPY . .`，而是先处理依赖描述文件：
+
+```dockerfile
+COPY pom.xml .
+RUN mvn dependency:go-offline
+```
+
+然后才复制经常修改的源码：
+
+```dockerfile
+COPY src ./src
+RUN mvn clean package -DskipTests
+```
+
+这与上一篇 Build Cache 实验直接对应。
+
+`pom.xml` 不变而 Java 源码发生变化时，下载依赖的构建步骤仍有机会命中缓存，只需要重新复制源码并执行打包。若一开始就把整个项目复制进去，任何源码变化都会改变前面的 `COPY` 结果，使后续依赖下载步骤也更容易失去缓存。
+
+可以把两种顺序对比为：
+
+```text
+不利于复用缓存                 更利于复用缓存
+
+COPY . .                       COPY pom.xml .
+RUN mvn package                RUN mvn dependency:go-offline
+                               COPY src ./src
+                               RUN mvn package
+```
+
+`dependency:go-offline` 会提前解析并下载项目依赖与相关插件，让它们进入该构建步骤的缓存结果。它不是说最终运行容器必须离线，也不会把完整 Maven 环境复制进最终 JRE Image。
+
+如果 `pom.xml` 改变，依赖输入本身已经变化，重新执行依赖下载就是合理的缓存失效。
+
+## 12. Spring Boot 最终镜像保留了什么
+
+第二个 `FROM` 开始了全新的运行阶段：
+
+```dockerfile
+FROM eclipse-temurin:21-jre
+```
+
+最终镜像不会整体包含 Maven、项目源码和 Build Stage 中的本地依赖仓库。这里只从前一个阶段复制打包产物：
+
+```dockerfile
+COPY --from=build /build/target/*.jar app.jar
+```
+
+本机 `spring-lab:v1` 的最终 History 顶部主要包含：
+
+```text
+COPY /build/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java" "-jar" "app.jar"]
+```
+
+复制进最终镜像的 JAR 约为 23 MB，整个 `spring-lab:v1` Image 约为 519 MB。镜像的大部分体积来自 JRE 基础镜像，而不是 Maven Build Stage。
+
+`EXPOSE 8080` 只是说明该镜像预期在容器的 `8080/tcp` 上提供服务，不会自动把端口发布到宿主机。运行时仍要明确配置：
+
+```bash
+docker run -d \
+  --name springboot1 \
+  -p 127.0.0.1:8081:8080 \
+  spring-lab:v1
+```
+
+这里把 macOS 的 `8081` 发布到容器的 `8080`。查看日志：
+
+```bash
+docker logs springboot1
+```
+
+本机日志显示内置 Tomcat 已在容器的 8080 端口启动。访问根路径时：
+
+```bash
+curl -i http://localhost:8081
+```
+
+当前最小项目返回了 HTTP 404。这并不表示容器或 Tomcat 启动失败，而是应用还没有为 `/` 定义对应的 Controller；端口连通和 Spring Boot 启动本身已经得到验证。
+
+## 13. 这轮 Java 构建实验形成的完整认识
+
+从最初的单阶段 Java 构建，到 Spring Boot 的 Maven Multi-stage Build，这轮实验逐步拆开了四种职责：
+
+```text
+Build Tool
+    Maven / javac / jar
+            │
+            ▼
+Build Artifact
+    可执行 JAR
+            │
+            │ COPY --from
+            ▼
+Runtime Environment
+    JRE
+            │
+            ▼
+Container Process
+    ENTRYPOINT + CMD 或运行参数
+```
+
+现在我对 Java 应用容器化的理解不再是“把 Java 项目目录复制进镜像再启动”，而是：
+
+1. 在具备完整工具链的 Build Stage 中生成经过构建的 JAR。
+2. 只把 JAR 传递到更精简的 Runtime Stage。
+3. 用 `ENTRYPOINT` 固定 Java 启动程序，并按需要用 `CMD` 提供默认参数。
+4. 利用 Dockerfile 的顺序，让 Maven 依赖下载尽可能复用 Build Cache。
+5. 通过运行时端口发布和外部配置，把同一个镜像用于不同环境。
+
+Multi-stage Build 解决的是构建环境与运行环境的分离，`ENTRYPOINT` 和 `CMD` 解决的是容器主程序与默认参数的组合，而 Maven 依赖步骤的顺序则影响重复构建效率。这几部分组合起来，才构成一个比较完整的 Java 应用镜像构建过程。

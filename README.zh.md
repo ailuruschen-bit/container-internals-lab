@@ -19,7 +19,7 @@
 - [Docker Image 构建实操（一）：Hello World](notes/zh/docker-image-build-hello-world.md)
 - [Docker Image 构建实操（二）：定制 Nginx 首页](notes/zh/docker-image-build-nginx.md)
 - [Docker Image 构建实操（三）：缓存、ARG/ENV 与 .dockerignore](notes/zh/docker-image-build-cache-args-ignore.md)
-- [Docker Image 构建实操（四）：Java 与 Multi-stage Build（进行中）](notes/zh/docker-image-build-java-multistage.md)
+- [Docker Image 构建实操（四）：Java 与 Multi-stage Build](notes/zh/docker-image-build-java-multistage.md)
 
 英文和日文译文会随笔记逐步补充。
 
