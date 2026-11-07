@@ -482,7 +482,148 @@ JRE Runtime Stage
     └── java -jar app.jar
 ```
 
-## 11. 为什么先复制 `pom.xml` 再复制源码
+## 11. Maven 在这个 Spring Boot 项目中负责什么
+
+这次 Spring Boot 项目采用 Maven，因此构建过程高度依赖 Maven，但这不等于 Spring Boot 只能使用 Maven。Spring Boot 同样支持 Gradle；更准确的说法是：**当前这个以 `pom.xml` 管理的项目，其依赖解析和构建流程由 Maven 驱动。**
+
+Maven 读取 `pom.xml` 后，会先组合出当前项目真正生效的构建模型。其中比较重要的来源包括：
+
+- 项目自身声明的坐标、属性和构建配置。
+- 通过 `<parent>` 继承的父 POM 配置。
+- `<dependencyManagement>` 提供的依赖版本管理。
+- `<dependencies>` 声明的直接依赖及其传递依赖。
+- `<build>` 中配置或继承得到的 Maven Plugin。
+
+如果项目继承 `spring-boot-starter-parent`，就可以取得 Spring Boot 提供的一组默认设置，例如受管理的常用依赖版本、编译参数和部分 Plugin 配置。这里的“继承”不是 Java 类继承，而是 Maven 在解析 POM 时把父子配置合成为 Effective POM。
+
+`<dependencies>` 中声明的也不宜统一称为“模块”。Maven 处理的是构件（Artifact），常见形式是 JAR。一个直接依赖还可能继续引用其他构件，Maven 会按照依赖传递、版本管理和 Scope 等规则计算最终使用的依赖集合。
+
+解析时，Maven 通常先检查本地仓库；本地不存在的 POM、JAR 和 Plugin 再从配置的远程仓库下载。默认本地仓库位于：
+
+```text
+~/.m2/repository
+```
+
+因此 Maven 不只是“下载库”，还负责理解 POM、解析依赖关系、执行生命周期与 Plugin，并最终生成构建产物。
+
+对于 Spring Boot 项目，`mvn package` 会执行 Maven 到 `package` 阶段所需的生命周期步骤。配置了 Spring Boot Maven Plugin 后，还会把普通 JAR 重新组织成可以通过下面命令启动的可执行 JAR：
+
+```text
+java -jar app.jar
+```
+
+## 12. 两种 Maven Build Stage 的选择
+
+完成这个实验后，我发现 Build Stage 至少有两种常见写法。二者最终都使用 Maven 构建项目，区别在于 Maven 由基础镜像提供，还是由项目自己的 Wrapper 启动。
+
+### 方式一：使用包含 Maven 的基础镜像
+
+当前实验采用：
+
+```dockerfile
+FROM maven:3.9-eclipse-temurin-21 AS build
+```
+
+这个基础镜像已经准备好了 Maven 和 JDK，因此可以直接执行：
+
+```dockerfile
+RUN mvn dependency:go-offline
+RUN mvn clean package -DskipTests
+```
+
+这里调用的是基础镜像中安装的全局 `mvn`。它的优点是 Dockerfile 简单，不需要先启动 Wrapper；Maven 版本则由选择的 Maven Image Tag 决定。
+
+这种方式仍然应该使用明确的基础镜像版本。如果一直使用会变化的宽泛 Tag，不同时间重新构建时，实际 Maven 或 JDK 版本仍可能发生变化。
+
+### 方式二：在 JDK 镜像中使用 Maven Wrapper
+
+启用了 Maven Wrapper 的项目通常包含：
+
+```text
+spring-lab/
+├── .mvn/
+│   └── wrapper/
+│       └── maven-wrapper.properties
+├── mvnw
+├── mvnw.cmd
+├── pom.xml
+└── src/
+```
+
+其中：
+
+- `mvnw` 是 Linux 和 macOS 使用的启动脚本。
+- `mvnw.cmd` 是 Windows 使用的启动脚本。
+- `.mvn/wrapper/maven-wrapper.properties` 记录 Wrapper 使用的 Maven 发行版及下载地址等配置。
+- 不同 Wrapper 类型还可能包含 `maven-wrapper.jar` 或下载器源码。
+
+Wrapper 并不是把完整 Maven 安装包直接提交进项目。执行 `./mvnw` 时，它会根据项目内的 Wrapper 配置寻找指定版本；本地没有时，再下载并使用该 Maven 发行版。
+
+在 Multi-stage Dockerfile 中，可以改用普通 JDK 镜像：
+
+```dockerfile
+FROM eclipse-temurin:21-jdk AS build
+
+WORKDIR /build
+
+COPY .mvn .mvn
+COPY --chmod=0755 mvnw .
+COPY pom.xml .
+
+RUN ./mvnw dependency:go-offline
+
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+COPY --from=build /build/target/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+这里没有执行全局 `mvn`，而是始终执行项目提供的 `./mvnw`。这样开发机、CI 和 Docker Build Stage 都可以按照同一份 Wrapper 配置使用指定 Maven 版本。
+
+`mvnw` 必须具有执行权限。示例使用 `COPY --chmod=0755` 在复制时设置权限；也可以在版本库中正确保存它的可执行位。
+
+Wrapper 首次运行通常还需要网络下载 Maven 发行版。具体 Wrapper 类型可能依赖 Wrapper JAR、Java 下载器，或者 `curl`、`wget` 等工具，因此不能假设任意精简 JDK 镜像都一定具备所有启动条件。选择 Base Image 后仍要实际验证 Wrapper 能否正常启动。
+
+### Maven 发行版与项目依赖不是同一个缓存目录
+
+Wrapper 下载的 Maven 发行版本身，默认保存在：
+
+```text
+~/.m2/wrapper/dists
+```
+
+Maven 解析出的项目依赖和 Plugin 则默认保存在：
+
+```text
+~/.m2/repository
+```
+
+如果 Docker Build Stage 默认以 root 用户执行，`~` 通常是 `/root`，对应路径就是：
+
+```text
+/root/.m2/wrapper/dists
+/root/.m2/repository
+```
+
+如果基础镜像切换了构建用户，或者通过 Maven 参数修改了本地仓库位置，实际路径也会改变，因此 `~/.m2/repository` 是默认约定，不是不可改变的固定地址。
+
+无论使用基础镜像中的全局 Maven，还是使用 Maven Wrapper，依赖解析后都会使用 Maven Local Repository 的机制。区别主要在于“由谁决定并提供 Maven 本身”：
+
+| 构建方式 | Maven 从哪里来 | Maven 版本主要由什么决定 |
+|---|---|---|
+| Maven 基础镜像 | 已安装在 Image 中 | Base Image Tag |
+| Maven Wrapper | Wrapper 按项目配置取得 | `.mvn/wrapper` 配置 |
+
+这两个方案都只用于 Build Stage。因为最终阶段只复制 JAR，所以 Maven、Wrapper、`~/.m2` 和项目源码都不会自动进入最终 JRE Image。
+
+## 13. 为什么先复制 `pom.xml` 再复制源码
 
 构建阶段没有一开始就执行 `COPY . .`，而是先处理依赖描述文件：
 
@@ -517,7 +658,7 @@ RUN mvn package                RUN mvn dependency:go-offline
 
 如果 `pom.xml` 改变，依赖输入本身已经变化，重新执行依赖下载就是合理的缓存失效。
 
-## 12. Spring Boot 最终镜像保留了什么
+## 14. Spring Boot 最终镜像保留了什么
 
 第二个 `FROM` 开始了全新的运行阶段：
 
@@ -564,7 +705,7 @@ curl -i http://localhost:8081
 
 当前最小项目返回了 HTTP 404。这并不表示容器或 Tomcat 启动失败，而是应用还没有为 `/` 定义对应的 Controller；端口连通和 Spring Boot 启动本身已经得到验证。
 
-## 13. 这轮 Java 构建实验形成的完整认识
+## 15. 这轮 Java 构建实验形成的完整认识
 
 从最初的单阶段 Java 构建，到 Spring Boot 的 Maven Multi-stage Build，这轮实验逐步拆开了四种职责：
 
@@ -588,7 +729,7 @@ Container Process
 
 现在我对 Java 应用容器化的理解不再是“把 Java 项目目录复制进镜像再启动”，而是：
 
-1. 在具备完整工具链的 Build Stage 中生成经过构建的 JAR。
+1. 在 Maven + JDK 基础镜像或 JDK + Maven Wrapper 的 Build Stage 中生成经过构建的 JAR。
 2. 只把 JAR 传递到更精简的 Runtime Stage。
 3. 用 `ENTRYPOINT` 固定 Java 启动程序，并按需要用 `CMD` 提供默认参数。
 4. 利用 Dockerfile 的顺序，让 Maven 依赖下载尽可能复用 Build Cache。
