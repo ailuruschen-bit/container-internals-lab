@@ -20,6 +20,7 @@
 - [Docker Image 构建实操（二）：定制 Nginx 首页](notes/zh/docker-image-build-nginx.md)
 - [Docker Image 构建实操（三）：缓存、ARG/ENV 与 .dockerignore](notes/zh/docker-image-build-cache-args-ignore.md)
 - [Docker Image 构建实操（四）：Java 与 Multi-stage Build](notes/zh/docker-image-build-java-multistage.md)
+- [Docker Image 实操（五）：版本替换、回滚与 Registry](notes/zh/docker-image-version-rollback-registry.md)
 
 英文和日文译文会随笔记逐步补充。
 
