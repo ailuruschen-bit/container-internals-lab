@@ -8,19 +8,20 @@
 
 ## 笔记
 
-- [环境变量到底属于谁？](notes/zh/environment-variables-belong-to-processes.md)
-- [CPU 是怎样被操作系统“抢回来”的？](notes/zh/how-the-kernel-takes-back-the-cpu.md)
-- [Linux 文件系统、Mount 与 Mount Namespace 学习心得](notes/zh/where-is-container-root-filesystem.md)
-- [Namespace 隔离视图，Cgroup 限制用量](notes/zh/namespace-views-and-cgroup-limits.md)
-- [Linux 容器网络底层原理：从 Network Namespace 到 NAT](notes/zh/linux-container-networking.md)
-- [Docker 基础实操：把 Mount 与 Network 对应到内核机制](notes/zh/docker-mount-and-network-practice.md)
-- [Docker Image 基础操作：先学会查看镜像](notes/zh/docker-image-basics.md)
-- [我为什么需要容器化？](notes/zh/why-containerize-applications.md)
-- [Docker Image 构建实操（一）：Hello World](notes/zh/docker-image-build-hello-world.md)
-- [Docker Image 构建实操（二）：定制 Nginx 首页](notes/zh/docker-image-build-nginx.md)
-- [Docker Image 构建实操（三）：缓存、ARG/ENV 与 .dockerignore](notes/zh/docker-image-build-cache-args-ignore.md)
-- [Docker Image 构建实操（四）：Java 与 Multi-stage Build](notes/zh/docker-image-build-java-multistage.md)
-- [Docker Image 实操（五）：版本替换、回滚与 Registry](notes/zh/docker-image-version-rollback-registry.md)
+- 01. [环境变量到底属于谁？](notes/zh/01-environment-variables-belong-to-processes.md)
+- 02. [CPU 是怎样被操作系统“抢回来”的？](notes/zh/02-how-the-kernel-takes-back-the-cpu.md)
+- 03. [Linux 文件系统、Mount 与 Mount Namespace 学习心得](notes/zh/03-where-is-container-root-filesystem.md)
+- 04. [Namespace 隔离视图，Cgroup 限制用量](notes/zh/04-namespace-views-and-cgroup-limits.md)
+- 05. [Linux 容器网络底层原理：从 Network Namespace 到 NAT](notes/zh/05-linux-container-networking.md)
+- 06. [Docker 基础实操：把 Mount 与 Network 对应到内核机制](notes/zh/06-docker-mount-and-network-practice.md)
+- 07. [Docker Image 基础操作：先学会查看镜像](notes/zh/07-docker-image-basics.md)
+- 08. [我为什么需要容器化？](notes/zh/08-why-containerize-applications.md)
+- 09. [Docker Image 构建实操（一）：Hello World](notes/zh/09-docker-image-build-hello-world.md)
+- 10. [Docker Image 构建实操（二）：定制 Nginx 首页](notes/zh/10-docker-image-build-nginx.md)
+- 11. [Docker Image 构建实操（三）：缓存、ARG/ENV 与 .dockerignore](notes/zh/11-docker-image-build-cache-args-ignore.md)
+- 12. [Docker Image 构建实操（四）：Java 与 Multi-stage Build](notes/zh/12-docker-image-build-java-multistage.md)
+- 13. [Docker Image 实操（五）：版本替换、回滚与 Registry](notes/zh/13-docker-image-version-rollback-registry.md)
+- 14. [Docker Compose 初步：从 `docker run` 到多服务配置](notes/zh/14-docker-compose-basics.md)
 
 英文和日文译文会随笔记逐步补充。
 

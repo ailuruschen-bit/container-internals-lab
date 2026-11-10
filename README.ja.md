@@ -8,17 +8,17 @@
 
 ## ノート
 
-- [環境変数は誰のものか](notes/ja/environment-variables-belong-to-processes.md)
-- [OS はどのように CPU を「取り戻す」のか](notes/ja/how-the-kernel-takes-back-the-cpu.md)
-- [Linux のファイルシステム、マウント、Mount Namespace について学んだこと](notes/ja/where-is-container-root-filesystem.md)
-- [Namespace は見え方を隔離し、Cgroup は使用量を制限する](notes/ja/namespace-views-and-cgroup-limits.md)
-- [Linux コンテナネットワークの仕組み：Network Namespace から NAT まで](notes/ja/linux-container-networking.md)
-- [Docker 基本操作の実践：マウントとネットワークをカーネルの仕組みに対応づける](notes/ja/docker-mount-and-network-practice.md)
-- [Docker イメージの基本操作：まずはイメージを確認する](notes/ja/docker-image-basics.md)
-- [なぜコンテナ化が必要なのか](notes/ja/why-containerize-applications.md)
-- [Docker イメージのビルド実践（1）：Hello World](notes/ja/docker-image-build-hello-world.md)
-- [Docker イメージのビルド実践（2）：Nginx のトップページをカスタマイズする](notes/ja/docker-image-build-nginx.md)
-- [Docker イメージのビルド実践（3）：キャッシュ、ARG/ENV、.dockerignore](notes/ja/docker-image-build-cache-args-ignore.md)
+- 01. [環境変数は誰のものか](notes/ja/01-environment-variables-belong-to-processes.md)
+- 02. [OS はどのように CPU を「取り戻す」のか](notes/ja/02-how-the-kernel-takes-back-the-cpu.md)
+- 03. [Linux のファイルシステム、マウント、Mount Namespace について学んだこと](notes/ja/03-where-is-container-root-filesystem.md)
+- 04. [Namespace は見え方を隔離し、Cgroup は使用量を制限する](notes/ja/04-namespace-views-and-cgroup-limits.md)
+- 05. [Linux コンテナネットワークの仕組み：Network Namespace から NAT まで](notes/ja/05-linux-container-networking.md)
+- 06. [Docker 基本操作の実践：マウントとネットワークをカーネルの仕組みに対応づける](notes/ja/06-docker-mount-and-network-practice.md)
+- 07. [Docker イメージの基本操作：まずはイメージを確認する](notes/ja/07-docker-image-basics.md)
+- 08. [なぜコンテナ化が必要なのか](notes/ja/08-why-containerize-applications.md)
+- 09. [Docker イメージのビルド実践（1）：Hello World](notes/ja/09-docker-image-build-hello-world.md)
+- 10. [Docker イメージのビルド実践（2）：Nginx のトップページをカスタマイズする](notes/ja/10-docker-image-build-nginx.md)
+- 11. [Docker イメージのビルド実践（3）：キャッシュ、ARG/ENV、.dockerignore](notes/ja/11-docker-image-build-cache-args-ignore.md)
 
 英語版と日本語版は、ノートの追加に合わせて順次補充していく。
 

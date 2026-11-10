@@ -8,17 +8,17 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 
 ## Notes
 
-- [Who Owns an Environment Variable?](notes/environment-variables-belong-to-processes.md)
-- [How Does the Operating System Take Back the CPU?](notes/how-the-kernel-takes-back-the-cpu.md)
-- [Linux Filesystems, Mounts, and Mount Namespaces: What I Learned](notes/where-is-container-root-filesystem.md)
-- [Namespaces Isolate the View; Cgroups Limit the Usage](notes/namespace-views-and-cgroup-limits.md)
-- [How Linux Container Networking Works: From Network Namespaces to NAT](notes/linux-container-networking.md)
-- [Hands-On Docker Basics: Mapping Mounts and Networks to Kernel Mechanisms](notes/docker-mount-and-network-practice.md)
-- [Docker Image Basics: Learning to Inspect Images First](notes/docker-image-basics.md)
-- [Why Do I Need Containerization?](notes/why-containerize-applications.md)
-- [Building Docker Images in Practice (1): Hello World](notes/docker-image-build-hello-world.md)
-- [Building Docker Images in Practice (2): Customizing the Nginx Home Page](notes/docker-image-build-nginx.md)
-- [Building Docker Images in Practice (3): Cache, ARG/ENV, and .dockerignore](notes/docker-image-build-cache-args-ignore.md)
+- 01. [Who Owns an Environment Variable?](notes/01-environment-variables-belong-to-processes.md)
+- 02. [How Does the Operating System Take Back the CPU?](notes/02-how-the-kernel-takes-back-the-cpu.md)
+- 03. [Linux Filesystems, Mounts, and Mount Namespaces: What I Learned](notes/03-where-is-container-root-filesystem.md)
+- 04. [Namespaces Isolate the View; Cgroups Limit the Usage](notes/04-namespace-views-and-cgroup-limits.md)
+- 05. [How Linux Container Networking Works: From Network Namespaces to NAT](notes/05-linux-container-networking.md)
+- 06. [Hands-On Docker Basics: Mapping Mounts and Networks to Kernel Mechanisms](notes/06-docker-mount-and-network-practice.md)
+- 07. [Docker Image Basics: Learning to Inspect Images First](notes/07-docker-image-basics.md)
+- 08. [Why Do I Need Containerization?](notes/08-why-containerize-applications.md)
+- 09. [Building Docker Images in Practice (1): Hello World](notes/09-docker-image-build-hello-world.md)
+- 10. [Building Docker Images in Practice (2): Customizing the Nginx Home Page](notes/10-docker-image-build-nginx.md)
+- 11. [Building Docker Images in Practice (3): Cache, ARG/ENV, and .dockerignore](notes/11-docker-image-build-cache-args-ignore.md)
 
 English and Japanese versions are added progressively as new notes are written.
 
