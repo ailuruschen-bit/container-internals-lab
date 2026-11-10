@@ -354,20 +354,20 @@ Argument: default
 ### `docker run` で新しい引数を渡す
 
 ```bash
-docker run --rm java-lab:v3 Codex
+docker run --rm java-lab:v3 hello
 ```
 
 出力は次のように変わる。
 
 ```text
 Java application started!
-Argument: Codex
+Argument: hello
 ```
 
-イメージ名の後の `Codex` が `CMD ["default"]` を置き換え、さらに引数として元の Exec 形式の `ENTRYPOINT` に追加される。
+イメージ名の後の `hello` が `CMD ["default"]` を置き換え、さらに引数として元の Exec 形式の `ENTRYPOINT` に追加される。
 
 ```text
-java -jar app.jar Codex
+java -jar app.jar hello
 ```
 
 したがって、より正確には「`docker run` の後ろの内容は常に Java に渡される」ではなく、次のように言うべきである。

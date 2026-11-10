@@ -354,20 +354,20 @@ Argument: default
 ### 在 `docker run` 中传入新参数
 
 ```bash
-docker run --rm java-lab:v3 Codex
+docker run --rm java-lab:v3 hello
 ```
 
 输出变成：
 
 ```text
 Java application started!
-Argument: Codex
+Argument: hello
 ```
 
-镜像名称后面的 `Codex` 替换了 `CMD ["default"]`，再作为参数追加给原有的 Exec Form `ENTRYPOINT`：
+镜像名称后面的 `hello` 替换了 `CMD ["default"]`，再作为参数追加给原有的 Exec Form `ENTRYPOINT`：
 
 ```text
-java -jar app.jar Codex
+java -jar app.jar hello
 ```
 
 因此，更准确的说法不是“`docker run` 后面的内容总会传给 Java”，而是：

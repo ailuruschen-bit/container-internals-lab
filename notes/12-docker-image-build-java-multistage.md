@@ -354,20 +354,20 @@ Argument: default
 ### Passing New Arguments with `docker run`
 
 ```bash
-docker run --rm java-lab:v3 Codex
+docker run --rm java-lab:v3 hello
 ```
 
 The output becomes:
 
 ```text
 Java application started!
-Argument: Codex
+Argument: hello
 ```
 
-`Codex` after the image name replaces `CMD ["default"]` and is then appended as an argument to the existing exec-form `ENTRYPOINT`:
+`hello` after the image name replaces `CMD ["default"]` and is then appended as an argument to the existing exec-form `ENTRYPOINT`:
 
 ```text
-java -jar app.jar Codex
+java -jar app.jar hello
 ```
 
 So the more accurate statement is not "whatever follows `docker run` is always passed to Java," but:
