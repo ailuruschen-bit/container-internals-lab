@@ -1,5 +1,7 @@
 # Docker Compose 初步：从 `docker run` 到多服务配置
 
+[English](../14-docker-compose-basics.md) | **中文** | [日本語](../ja/14-docker-compose-basics.md)
+
 今天开始学习 Docker Compose，目前只完成了最基础的配置实验。这篇先记录我对 `compose.yaml`、Service、端口与环境变量，以及服务启动依赖和健康检查的理解。
 
 Compose 最直接的价值，是把原本分散在多条 `docker run` 命令中的容器配置，集中保存为一份可以重复执行的 YAML 文件。

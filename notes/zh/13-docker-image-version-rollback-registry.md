@@ -1,5 +1,7 @@
 # Docker Image 实操（五）：版本替换、回滚与 Registry
 
+[English](../13-docker-image-version-rollback-registry.md) | **中文** | [日本語](../ja/13-docker-image-version-rollback-registry.md)
+
 完成 Spring Boot 镜像构建后，我继续实验了两个更接近交付过程的问题：应用版本怎样更新和回滚，以及构建完成的 Image 怎样在不同环境之间传递。
 
 这次最重要的认识是：容器化应用通常不在原容器中更新程序，而是用新 Image 创建新 Container；Registry 则负责保存和分发这些不同版本的 Image。

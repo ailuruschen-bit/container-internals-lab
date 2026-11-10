@@ -1,5 +1,7 @@
 # Docker Image 构建实操（四）：Java 与 Multi-stage Build
 
+[English](../12-docker-image-build-java-multistage.md) | **中文** | [日本語](../ja/12-docker-image-build-java-multistage.md)
+
 这轮实验开始构建 Java 应用镜像：先在一个镜像中完成编译与运行，再使用 Multi-stage Build 把编译环境和运行环境分开，最后继续观察 `ENTRYPOINT` 的参数传递，并把同样的构建方法应用到一个最小 Spring Boot 项目。
 
 这次最直观的变化是，Dockerfile 不再只是复制一个现成程序，而是开始承担真正的构建工作。

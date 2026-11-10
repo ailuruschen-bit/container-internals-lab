@@ -19,6 +19,10 @@
 - 09. [Docker イメージのビルド実践（1）：Hello World](notes/ja/09-docker-image-build-hello-world.md)
 - 10. [Docker イメージのビルド実践（2）：Nginx のトップページをカスタマイズする](notes/ja/10-docker-image-build-nginx.md)
 - 11. [Docker イメージのビルド実践（3）：キャッシュ、ARG/ENV、.dockerignore](notes/ja/11-docker-image-build-cache-args-ignore.md)
+- 12. [Docker イメージのビルド実践（4）：Java とマルチステージビルド](notes/ja/12-docker-image-build-java-multistage.md)
+- 13. [Docker イメージの実践（5）：バージョンの置き換え、ロールバック、レジストリ](notes/ja/13-docker-image-version-rollback-registry.md)
+- 14. [Docker Compose 入門：`docker run` から複数サービスの構成へ](notes/ja/14-docker-compose-basics.md)
+- 15. [Docker の `USER`：アプリケーションを非 root で実行する](notes/ja/15-docker-user-best-practices.md)
 
 英語版と日本語版は、ノートの追加に合わせて順次補充していく。
 

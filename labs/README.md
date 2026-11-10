@@ -12,11 +12,11 @@ The labs were run on macOS with OrbStack; any Docker Engine on Linux works the s
 | [`docker-image-lab/03-cache/`](docker-image-lab/03-cache/) | Build cache hits and invalidation by instruction order | [11](../notes/11-docker-image-build-cache-args-ignore.md) |
 | [`docker-image-lab/03-env/`](docker-image-lab/03-env/) | Build-time `ARG` vs. runtime `ENV` | [11](../notes/11-docker-image-build-cache-args-ignore.md) |
 | [`docker-image-lab/03-ignore/`](docker-image-lab/03-ignore/) | Filtering the build context with `.dockerignore` | [11](../notes/11-docker-image-build-cache-args-ignore.md) |
-| [`docker-image-lab/04-java/simple/`](docker-image-lab/04-java/simple/) | Single-stage Java build on a JDK image | [12 (Chinese)](../notes/zh/12-docker-image-build-java-multistage.md) |
-| [`docker-image-lab/04-java/multi-stage/`](docker-image-lab/04-java/multi-stage/) | Multi-stage build: compile on a JDK, run on a JRE | [12 (Chinese)](../notes/zh/12-docker-image-build-java-multistage.md) |
-| [`docker-image-lab/04-java/entrypoint/`](docker-image-lab/04-java/entrypoint/) | How `ENTRYPOINT`, `CMD`, and run-time arguments combine | [12 (Chinese)](../notes/zh/12-docker-image-build-java-multistage.md) |
-| [`docker-image-lab/04-java/springboot/`](docker-image-lab/04-java/springboot/) | Spring Boot image with a Maven build stage and a non-root runtime | [12](../notes/zh/12-docker-image-build-java-multistage.md), [13](../notes/zh/13-docker-image-version-rollback-registry.md), [15](../notes/zh/15-docker-user-best-practices.md) (Chinese) |
-| [`docker-image-lab/05-compose/`](docker-image-lab/05-compose/) | The Spring Boot app and PostgreSQL as one Compose project | [14 (Chinese)](../notes/zh/14-docker-compose-basics.md) |
+| [`docker-image-lab/04-java/simple/`](docker-image-lab/04-java/simple/) | Single-stage Java build on a JDK image | [12](../notes/12-docker-image-build-java-multistage.md) |
+| [`docker-image-lab/04-java/multi-stage/`](docker-image-lab/04-java/multi-stage/) | Multi-stage build: compile on a JDK, run on a JRE | [12](../notes/12-docker-image-build-java-multistage.md) |
+| [`docker-image-lab/04-java/entrypoint/`](docker-image-lab/04-java/entrypoint/) | How `ENTRYPOINT`, `CMD`, and run-time arguments combine | [12](../notes/12-docker-image-build-java-multistage.md) |
+| [`docker-image-lab/04-java/springboot/`](docker-image-lab/04-java/springboot/) | Spring Boot image with a Maven build stage and a non-root runtime | [12](../notes/12-docker-image-build-java-multistage.md), [13](../notes/13-docker-image-version-rollback-registry.md), [15](../notes/15-docker-user-best-practices.md) |
+| [`docker-image-lab/05-compose/`](docker-image-lab/05-compose/) | The Spring Boot app and PostgreSQL as one Compose project | [14](../notes/14-docker-compose-basics.md) |
 
 ## Bind mount lab
 

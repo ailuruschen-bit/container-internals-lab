@@ -1,5 +1,7 @@
 # Docker `USER`：让应用以非 root 身份运行
 
+[English](../15-docker-user-best-practices.md) | **中文** | [日本語](../ja/15-docker-user-best-practices.md)
+
 今天学习了 Dockerfile 中 `USER` 的安全实践。它解决的问题很直接：如果应用正常运行并不需要管理员权限，就不应该让容器主进程默认以 root 身份运行。
 
 不过，“容器内 root 等于宿主机 root”并不准确。容器仍然受到 Namespace、Capability、Seccomp 和挂载范围等机制限制。使用非 root 用户的意义，是进一步缩小应用被入侵后的权限范围，为容器增加一层纵深防御。

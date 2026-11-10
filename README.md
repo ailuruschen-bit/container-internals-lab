@@ -19,6 +19,10 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 - 09. [Building Docker Images in Practice (1): Hello World](notes/09-docker-image-build-hello-world.md)
 - 10. [Building Docker Images in Practice (2): Customizing the Nginx Home Page](notes/10-docker-image-build-nginx.md)
 - 11. [Building Docker Images in Practice (3): Cache, ARG/ENV, and .dockerignore](notes/11-docker-image-build-cache-args-ignore.md)
+- 12. [Building Docker Images in Practice (4): Java and Multi-stage Builds](notes/12-docker-image-build-java-multistage.md)
+- 13. [Docker Images in Practice (5): Version Replacement, Rollback, and Registries](notes/13-docker-image-version-rollback-registry.md)
+- 14. [Getting Started with Docker Compose: From `docker run` to Multi-Service Configuration](notes/14-docker-compose-basics.md)
+- 15. [Docker `USER`: Running Applications as a Non-root User](notes/15-docker-user-best-practices.md)
 
 English and Japanese versions are added progressively as new notes are written.
 
