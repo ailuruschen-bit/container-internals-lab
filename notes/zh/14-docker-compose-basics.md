@@ -167,6 +167,39 @@ app  ──→  cache:6379
 
 这也是 Compose 不只是“把多条 run 命令写进 YAML”的地方：它还以项目为单位管理容器之间的网络和生命周期。
 
+### Compose 创建的仍然是 Docker 资源
+
+Compose 提供了 Service 和 Project 这一层管理抽象，但最终资源仍然由同一个 Docker Engine 创建和管理，因此可以执行：
+
+```bash
+docker ps
+```
+
+观察到 Service 对应的实际 Container：
+
+```text
+05-compose-app-1
+05-compose-db-1
+```
+
+`docker compose ps` 只查看当前 Compose Project，`docker ps` 则查看当前 Docker Engine 中所有正在运行的 Container。
+
+默认网络也能通过普通 Docker 命令观察：
+
+```text
+docker network ls
+    └── 05-compose_default
+```
+
+其中 `05-compose` 是 Project 名，`default` 是 Compose 自动创建的默认 Bridge Network。需要查看连接详情时，可以使用 `docker network inspect 05-compose_default`。
+
+```text
+Compose Service 定义  ──→  Docker Container
+Compose 默认网络      ──→  Docker Bridge Network
+```
+
+Service 与 Container 仍不能完全画等号，因为一个 Service 可以拥有多个副本；每个实际副本才是 Docker Engine 中可见的 Container。
+
 ## 7. `depends_on` 只写服务名时保证什么
 
 短写法：
