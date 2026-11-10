@@ -92,16 +92,64 @@ Compose 会使用本地已有 Image；本地没有时，通常会按照拉取策
 services:
   app:
     build:
-      context: .
+      context: ../04-java/springboot
       dockerfile: Dockerfile
-    image: spring-lab:compose
+    image: spring-lab:dev
 ```
 
-这里的 `build` 告诉 Compose 从源码构建，`image` 则为构建结果指定名称。可以执行：
+这里的 `build` 告诉 Compose 从源码构建，`image` 则为这次构建结果设置 Image 名称和 Tag。
+
+### `context` 与 `dockerfile`
+
+`context` 对应 `docker build` 最后的 Build Context：
+
+```text
+compose.yaml 所在目录
+    │
+    └── ../04-java/springboot
+            ├── Dockerfile
+            ├── pom.xml
+            └── src/
+```
+
+相对 Context 路径从 Compose Project 目录解析。本次的 `../04-java/springboot` 表示 Spring Boot 项目目录，Dockerfile 中的 `COPY` 也只能使用该 Context 允许访问的文件。
+
+`dockerfile` 用来指定构建文件，它的相对路径以 Build Context 为基准。如果文件名就是 Context 根目录中的标准 `Dockerfile`，可以省略这一项；`context` 没有显式配置时也默认使用项目目录 `.`。
+
+因此，这两项不是任何情况下都必须同时写出。使用完整写法的好处，是构建输入和 Dockerfile 位置更加明确。
+
+### `image` 给构建结果命名
+
+`build` 与 `image` 是同一个 Service 下的两个配置：
+
+```yaml
+build:
+  context: ../04-java/springboot
+  dockerfile: Dockerfile
+image: spring-lab:dev
+```
+
+当 Compose 执行这次 Build 时，生成的 Image 会得到：
+
+```text
+spring-lab:dev
+```
+
+如果没有写 `image`，Compose 仍然能构建，并通常使用由 Project 与 Service 组合出的名称；但这不是自己明确约定的发布名称，执行 Compose Push 时也无法据此确定要推送到哪个 Registry Repository。因此，需要分发构建结果时应显式配置 `image`。
+
+可以单独构建：
+
+```bash
+docker compose build app
+```
+
+也可以在启动前要求 Compose 执行构建：
 
 ```bash
 docker compose up --build -d
 ```
+
+当 `build` 和 `image` 同时存在时，是否优先尝试 Pull 还会受到 `pull_policy` 和具体命令影响。当前实验通过 `--build` 明确要求启动前构建，避免把“写了 build 就一定每次自动重建”当成固定规则。
 
 因此，“Compose 必须使用已经 Build 好的 Image”并不准确。更完整的说法是：
 
@@ -153,7 +201,96 @@ environment:
 
 密码、令牌等敏感信息不适合直接提交在 Compose 文件中。后续还需要继续学习 `.env`、`env_file` 和 Secret 等配置方式，以及它们各自解决的问题。
 
-## 6. Compose 默认建立服务网络
+## 6. `volumes`：声明存储并挂载到 Service
+
+这次 PostgreSQL Service 增加了命名 Volume：
+
+```yaml
+services:
+  db:
+    image: postgres:17-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+```
+
+这里出现了两处 `volumes`，职责并不相同。
+
+### 顶级 `volumes` 声明命名 Volume
+
+```yaml
+volumes:
+  pgdata:
+```
+
+它告诉 Compose，当前 Project 中有一个逻辑名称为 `pgdata` 的命名 Volume。空配置表示使用 Docker Engine 默认的 Volume Driver。
+
+仅仅在文件中声明并不会马上创建实际资源。执行 `docker compose up` 时，Compose 会在需要时创建；已经存在时则继续复用。
+
+Compose 默认会把 Project 名加入实际资源名称。本次可以通过：
+
+```bash
+docker volume ls
+```
+
+观察到：
+
+```text
+05-compose_pgdata
+```
+
+`pgdata` 是 Compose 文件中的逻辑名，`05-compose_pgdata` 是 Docker Engine 中实际可见的 Volume 名。需要时还可以执行：
+
+```bash
+docker volume inspect 05-compose_pgdata
+```
+
+### Service 内的 `volumes` 指定挂载关系
+
+```yaml
+services:
+  db:
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+```
+
+短语法用冒号分成：
+
+```text
+Volume 逻辑名 : Container 内挂载路径
+pgdata        : /var/lib/postgresql/data
+```
+
+顶级声明只定义可用的命名 Volume，并不会自动授予任何 Service 使用。Service 内的配置才把 `pgdata` 挂载到 PostgreSQL 实际保存数据库文件的位置。
+
+### 为什么 Container 删除后数据仍然存在
+
+数据库文件不再只写入 `db` Container 的可写层，而是写入独立 Volume：
+
+```text
+05-compose-db-1
+    │ /var/lib/postgresql/data
+    ▼
+05-compose_pgdata
+```
+
+执行 `docker compose down` 后，Container 和默认 Network 被删除，但命名 Volume 默认保留。本次实验中 Compose Container 已经停止并删除，`05-compose_pgdata` 仍然可以通过 `docker volume ls` 观察到。
+
+下次 `docker compose up` 会重新创建 `db` Container，并挂载原来的 Volume，因此数据库能够继续读取此前写入的数据。
+
+这就是数据持久化的基本含义：数据生命周期不再与某一个 Container 完全绑定。
+
+不过，Volume 持久化不等于已经完成数据库备份、跨主机复制或版本升级。执行下面的命令还会主动删除 Compose 管理的 Volume：
+
+```bash
+docker compose down -v
+```
+
+其中可能包含数据库数据，因此不能把 `-v` 当作普通清理参数随意使用。
+
+## 7. Compose 默认建立服务网络
 
 包含多个 Service 时，Compose 默认会为当前项目创建一个网络，并把未指定其他网络的服务接入其中。
 
@@ -200,7 +337,7 @@ Compose 默认网络      ──→  Docker Bridge Network
 
 Service 与 Container 仍不能完全画等号，因为一个 Service 可以拥有多个副本；每个实际副本才是 Docker Engine 中可见的 Container。
 
-## 7. `depends_on` 只写服务名时保证什么
+## 8. `depends_on` 只写服务名时保证什么
 
 短写法：
 
@@ -221,7 +358,7 @@ Compose 会先创建和启动 `cache`，再启动 `app`，关闭时则按照相�
 
 因此，`depends_on` 解决的是依赖顺序，不会自动理解一个应用的业务就绪状态。
 
-## 8. `healthcheck`：定义怎样才算健康
+## 9. `healthcheck`：定义怎样才算健康
 
 正确的配置名是 `healthcheck`，不是 `health_check`：
 
@@ -255,7 +392,7 @@ redis-cli ping
 
 健康检查只是产生健康状态，不会因为 Container 变成 `unhealthy` 就自动修复应用。怎样重启、替换或告警，还取决于后续的运行与编排机制。
 
-## 9. 让依赖等待健康状态
+## 10. 让依赖等待健康状态
 
 要让 `app` 等待 `cache` 真正健康，需要使用 `depends_on` 的长写法：
 
@@ -295,7 +432,7 @@ healthcheck 通过
 
 这个例子只用于说明 Compose 的依赖与健康机制。当前 `spring-lab:v2` 是否真的使用 Redis，还取决于 Spring Boot 项目自身的依赖和配置；仅在 Compose 中声明 `depends_on` 不会让应用自动获得 Redis 功能。
 
-## 10. 最基础的 Compose 操作
+## 11. 最基础的 Compose 操作
 
 在 `compose.yaml` 所在目录中：
 
@@ -326,24 +463,29 @@ docker compose down
 
 `down` 默认不会删除 Image，也不会删除命名 Volume。`docker compose down -v` 会额外删除 Compose 管理的 Volume，里面可能有数据库等持久化数据，不能把它当成日常无风险清理命令。
 
-## 11. 当前形成的理解
+## 12. 当前形成的理解
 
 我现在先把 Compose 理解成两层：
 
 ```text
-Service 运行配置
-    ├── image / build
-    ├── ports
-    └── environment
+Service 构建与运行配置
+    ├── build / image
+    ├── ports / environment
+    └── volumes 挂载
 
 多 Service 关系
     ├── 默认网络与名称解析
     ├── depends_on
     └── healthcheck
+
+独立资源
+    ├── Image
+    ├── Network
+    └── Named Volume
 ```
 
 `compose.yaml` 并不是把 Shell 命令逐字翻译成 YAML，而是在声明一组服务希望达到的运行状态。Compose 再根据这份配置创建 Image、Network 和 Container，并统一管理它们的启动与停止。
 
 不过，Compose 目前解决的主要是一个 Docker 环境中的多容器应用定义与生命周期管理。它具备一定的编排能力，但不能直接等同于跨多台服务器进行调度、自愈和滚动发布的集群编排系统。
 
-这只是 Compose 学习的开头。后续还需要继续理解 Volume、`.env`、配置覆盖、重建行为，以及完整应用栈的实际组织方式。
+这仍然只是 Compose 学习的开头。后续还需要继续理解 `.env`、配置覆盖、重建行为，以及完整应用栈的实际组织方式。
