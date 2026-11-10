@@ -1,0 +1,7 @@
+# Database connection is not configured here: it is injected at run time
+# through SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD (see 05-compose).
+spring:
+  sql:
+    init:
+      # Run schema.sql on every startup, even for a non-embedded database.
+      mode: always

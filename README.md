@@ -22,6 +22,10 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 
 English and Japanese versions are added progressively as new notes are written.
 
+## Labs
+
+The Dockerfiles, sources, and Compose files used in the notes are in [`labs/`](labs/), with comments explaining each step.
+
 ## Archived Content
 
 The earlier articles and labs on container internals, organized by chapter, are preserved in full on the `archive/structured-container-course-2026-10-18` branch.

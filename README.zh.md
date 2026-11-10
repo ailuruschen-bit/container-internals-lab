@@ -26,6 +26,10 @@
 
 英文和日文译文会随笔记逐步补充。
 
+## 实验文件
+
+笔记中使用的 Dockerfile、源代码和 Compose 文件整理在 [`labs/`](labs/) 中，并附有说明各步骤的英文注释。
+
 ## 旧内容
 
 此前按章节组织的容器底层文章与实验，完整保存在分支 `archive/structured-container-course-2026-10-18`。

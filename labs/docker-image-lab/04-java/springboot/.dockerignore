@@ -1,0 +1,5 @@
+# Keep local build output, IDE files, and OS metadata out of the build context.
+target/
+.idea/
+*.iml
+.DS_Store

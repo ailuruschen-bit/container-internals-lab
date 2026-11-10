@@ -1,0 +1,3 @@
+# Excluded from the build context, so COPY . . cannot pick them up
+# and changes to them do not invalidate the COPY cache.
+*.log

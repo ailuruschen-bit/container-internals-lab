@@ -1,0 +1,49 @@
+# Spring Boot app + PostgreSQL with a named volume.
+#   docker compose up -d --build
+#   curl -X POST "http://localhost:8081/messages?text=hello"
+#   curl http://localhost:8081/messages
+#   docker compose down        # removes containers and the default network; keeps pgdata
+# The project name defaults to this directory's name (05-compose),
+# so resources appear as 05-compose-app-1, 05-compose_pgdata, and so on.
+
+services:
+  app:
+    # Build from the Spring Boot project; the context path is relative to this file.
+    build:
+      context: ../04-java/springboot
+      dockerfile: Dockerfile
+    # Tag given to the image that Compose builds.
+    image: spring-lab:dev
+    # Publish only on the host's loopback address: host 8081 -> container 8080.
+    ports:
+      - "127.0.0.1:8081:8080"
+    # Spring Boot maps these to spring.datasource.*. "db" is resolved by
+    # Compose's DNS on the project network.
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/labdb
+      SPRING_DATASOURCE_USERNAME: labuser
+      SPRING_DATASOURCE_PASSWORD: labpass
+    # Start the app only after the database passes its health check,
+    # not merely after the db container has been created.
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    # Lab-only credentials; use secrets or an untracked .env file for anything real.
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpass
+      POSTGRES_DB: labdb
+    # Named volume: data outlives the container and `docker compose down`.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser -d labdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
