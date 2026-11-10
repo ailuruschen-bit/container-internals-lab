@@ -22,6 +22,7 @@
 - 12. [Docker Image 构建实操（四）：Java 与 Multi-stage Build](notes/zh/12-docker-image-build-java-multistage.md)
 - 13. [Docker Image 实操（五）：版本替换、回滚与 Registry](notes/zh/13-docker-image-version-rollback-registry.md)
 - 14. [Docker Compose 初步：从 `docker run` 到多服务配置](notes/zh/14-docker-compose-basics.md)
+- 15. [Docker `USER`：让应用以非 root 身份运行](notes/zh/15-docker-user-best-practices.md)
 
 英文和日文译文会随笔记逐步补充。
 
