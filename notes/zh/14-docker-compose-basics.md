@@ -476,111 +476,15 @@ docker compose down
 
 `down` 默认不会删除 Image，也不会删除命名 Volume。`docker compose down -v` 会额外删除 Compose 管理的 Volume，里面可能有数据库等持久化数据，不能把它当成日常无风险清理命令。
 
-## 12. `.env`：把环境差异留在配置文件中
-
-Compose 支持从变量文件读取值，但这里有两个容易混淆的用途：
-
-```text
-.env / --env-file   为 compose.yaml 中的 ${变量} 提供替换值
-Service env_file    把文件中的变量传入 Container
-```
-
-### 默认 `.env` 与变量替换
-
-最常见的做法，是在 Compose Project 目录中放置 `.env`：
-
-```dotenv
-APP_TAG=dev
-DB_PASSWORD=local-password
-```
-
-然后在 `compose.yaml` 中引用：
-
-```yaml
-services:
-  app:
-    image: spring-lab:${APP_TAG}
-    environment:
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-```
-
-执行 Compose 命令时，Compose 会读取默认 `.env`，先把 `${APP_TAG}` 和 `${DB_PASSWORD}` 替换成具体值，再根据替换后的配置创建 Container。
-
-`.env` 中的变量并不会自动全部进入 Container。只有像上面这样在 `environment` 中传递的值，才会成为 Container 的环境变量；`APP_TAG` 在这里只参与 Image Tag 的拼接。
-
-可以在启动前检查替换结果：
-
-```bash
-docker compose config
-docker compose config --environment
-```
-
-第一条会输出解析后的 Compose 配置，其中可能已经包含密码等具体值，因此不应该把输出随意粘贴到日志或公开位置。
-
-### 使用其他位置的变量文件
-
-如果想让其他目录中的文件代替默认 `.env`，并为 Compose 文件中的 `${变量}` 提供值，可以在命令中指定：
-
-```bash
-docker compose --env-file ./config/.env.dev up -d
-```
-
-而 Service 下的 `env_file` 用途不同：
-
-```yaml
-services:
-  app:
-    image: spring-lab:dev
-    env_file:
-      - ./config/app.env
-```
-
-它把 `app.env` 中的变量传入 `app` Container，作用类似 `docker run --env-file`。相对路径从 `compose.yaml` 所在目录解析。如果同一个变量也出现在 Service 的 `environment` 中，`environment` 的值优先。
-
-因此，需要根据目的选择：
-
-```text
-替换 compose.yaml 中的 ${变量}  ──→  默认 .env 或命令行 --env-file
-批量设置 Container 环境变量      ──→  Service 的 env_file
-```
-
-### `.gitignore` 与 `.env.example`
-
-包含本地密码、令牌等实际值的 `.env` 不应提交到公开仓库，可以加入：
-
-```gitignore
-.env
-.env.*
-!.env.example
-```
-
-同时提交一份不含真实敏感值的 `.env.example`，说明项目需要哪些变量：
-
-```dotenv
-APP_TAG=dev
-DB_PASSWORD=replace-me
-```
-
-新环境可以复制它再填写实际值：
-
-```bash
-cp .env.example .env
-```
-
-`.gitignore` 只能降低文件被误提交的风险，不能加密内容。已经提交过的密码即使后来删除，也应该视为可能已经泄露并及时更换。
-
-## 13. 当前形成的理解
+## 12. 当前形成的理解
 
 我现在先把 Compose 理解成两层：
 
 ```text
 Service 构建与运行配置
     ├── build / image
-    ├── ports / environment / env_file
+    ├── ports / environment
     └── volumes 挂载
-
-Compose 配置参数
-    └── .env / --env-file 提供 ${变量} 替换值
 
 多 Service 关系
     ├── 默认网络与名称解析
@@ -597,4 +501,4 @@ Compose 配置参数
 
 不过，Compose 目前解决的主要是一个 Docker 环境中的多容器应用定义与生命周期管理。它具备一定的编排能力，但不能直接等同于跨多台服务器进行调度、自愈和滚动发布的集群编排系统。
 
-这仍然只是 Compose 学习的开头。后续还需要继续理解配置覆盖、重建行为，以及完整应用栈的实际组织方式。
+这仍然只是 Compose 学习的开头。环境变量文件和敏感配置的处理方式单独记录在下一篇：[Docker Compose 配置实操：从 `.env` 到 Secrets](16-docker-compose-env-and-secrets.md)。后续还需要继续理解配置覆盖、重建行为，以及完整应用栈的实际组织方式。

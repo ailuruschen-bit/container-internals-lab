@@ -1,4 +1,7 @@
 # Spring Boot app + PostgreSQL with a named volume.
+#   cp .env.example .env
+#   cp secrets/db_password.txt.example secrets/db_password.txt
+#   # Edit the two local files, then:
 #   docker compose up -d --build
 #   curl -X POST "http://localhost:8081/messages?text=hello"
 #   curl http://localhost:8081/messages
@@ -20,9 +23,14 @@ services:
     # Spring Boot maps these to spring.datasource.*. "db" is resolved by
     # Compose's DNS on the project network.
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/labdb
-      SPRING_DATASOURCE_USERNAME: labuser
-      SPRING_DATASOURCE_PASSWORD: labpass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      # Import files under /run/secrets as Spring configuration properties.
+      SPRING_CONFIG_IMPORT: configtree:/run/secrets/
+    secrets:
+      # Config Tree treats the target filename as the property name.
+      - source: db_password
+        target: spring.datasource.password
     # Start the app only after the database passes its health check,
     # not merely after the db container has been created.
     depends_on:
@@ -31,19 +39,27 @@ services:
 
   db:
     image: postgres:17-alpine
-    # Lab-only credentials; use secrets or an untracked .env file for anything real.
     environment:
-      POSTGRES_USER: labuser
-      POSTGRES_PASSWORD: labpass
-      POSTGRES_DB: labdb
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_NAME}
+      # The official Postgres entrypoint reads the password from this file.
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     # Named volume: data outlives the container and `docker compose down`.
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U labuser -d labdb"]
+      # Double $ leaves expansion to the shell inside the container.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+secrets:
+  db_password:
+    # This real file is local and ignored; only the .example template is committed.
+    file: ./secrets/db_password.txt
 
 volumes:
   pgdata:
