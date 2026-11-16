@@ -23,6 +23,7 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 - 13. [Docker Images in Practice (5): Version Replacement, Rollback, and Registries](notes/13-docker-image-version-rollback-registry.md)
 - 14. [Getting Started with Docker Compose: From `docker run` to Multi-Service Configuration](notes/14-docker-compose-basics.md)
 - 15. [Docker `USER`: Running Applications as a Non-root User](notes/15-docker-user-best-practices.md)
+- 16. [Docker Compose Configuration in Practice: From `.env` to Secrets](notes/16-docker-compose-env-and-secrets.md)
 
 English and Japanese versions are added progressively as new notes are written.
 

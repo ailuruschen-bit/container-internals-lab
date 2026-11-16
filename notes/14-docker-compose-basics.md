@@ -139,6 +139,17 @@ spring-lab:dev
 
 Without `image`, Compose can still build, usually using a name derived from the project and service. But that is not a release name I chose explicitly, and when running Compose push, it cannot tell which registry repository to push to. So `image` should be set explicitly whenever the build result needs to be distributed.
 
+If the Dockerfile sits at the root of the build context and uses the default name `Dockerfile`, `build` can also be written in short form:
+
+```yaml
+services:
+  app:
+    build: ../04-java/springboot
+    image: spring-lab:dev
+```
+
+Here the path after `build` is the build context itself, and Compose looks for the default `Dockerfile` in that directory. It is equivalent to setting only `context` and omitting `dockerfile`; if the Dockerfile is somewhere else or has a different name, the full form shown earlier is still needed.
+
 The service can be built on its own:
 
 ```bash
@@ -201,7 +212,7 @@ environment:
 
 These variables go into the containers Compose creates and override any default `ENV` of the same name in the image, without going back and modifying the image.
 
-Sensitive information such as passwords and tokens should not be committed directly in a Compose file. I still need to learn about `.env`, `env_file`, secrets, and other configuration mechanisms, and which problem each of them solves.
+Sensitive information such as passwords and tokens should not be committed directly in a Compose file. `.env` or `env_file` can keep the actual values separate from the Compose file, but they are still local plaintext files and are not the same as a dedicated secrets mechanism.
 
 ## 6. `volumes`: Declaring Storage and Mounting It into a Service
 
@@ -490,4 +501,4 @@ Independent resources
 
 That said, what Compose mainly solves for now is defining and managing the lifecycle of a multi-container application within a single Docker environment. It has some orchestration capabilities, but it cannot be equated with a cluster orchestration system that handles scheduling, self-healing, and rolling releases across multiple servers.
 
-This is still only the beginning of learning Compose. Next, I need to understand `.env`, configuration overrides, recreation behavior, and how a complete application stack is actually organized.
+This is still only the beginning of learning Compose. Environment files and the handling of sensitive configuration are covered separately in the next note: [Docker Compose Configuration in Practice: From `.env` to Secrets](16-docker-compose-env-and-secrets.md). Beyond that, I still need to understand configuration overrides, recreation behavior, and how a complete application stack is actually organized.

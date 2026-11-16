@@ -1,5 +1,7 @@
 # Docker Compose 配置实操：从 `.env` 到 Secrets
 
+[English](../16-docker-compose-env-and-secrets.md) | **中文** | [日本語](../ja/16-docker-compose-env-and-secrets.md)
+
 上一篇 Compose 笔记已经很长，因此我把环境配置和敏感信息单独拆出来记录。这次实验要解决的问题很具体：数据库名称、用户名可以作为普通配置传入容器，但密码不应该直接展开在 Compose 配置和容器环境变量中。
 
 ## 1. `.env` 解决的是配置替换

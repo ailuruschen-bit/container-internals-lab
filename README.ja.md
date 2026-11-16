@@ -23,6 +23,7 @@
 - 13. [Docker イメージの実践（5）：バージョンの置き換え、ロールバック、レジストリ](notes/ja/13-docker-image-version-rollback-registry.md)
 - 14. [Docker Compose 入門：`docker run` から複数サービスの構成へ](notes/ja/14-docker-compose-basics.md)
 - 15. [Docker の `USER`：アプリケーションを非 root で実行する](notes/ja/15-docker-user-best-practices.md)
+- 16. [Docker Compose の設定実践：`.env` から Secrets まで](notes/ja/16-docker-compose-env-and-secrets.md)
 
 英語版と日本語版は、ノートの追加に合わせて順次補充していく。
 
