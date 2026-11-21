@@ -24,6 +24,7 @@
 - 14. [Docker Compose 初步：从 `docker run` 到多服务配置](notes/zh/14-docker-compose-basics.md)
 - 15. [Docker `USER`：让应用以非 root 身份运行](notes/zh/15-docker-user-best-practices.md)
 - 16. [Docker Compose 配置实操：从 `.env` 到 Secrets](notes/zh/16-docker-compose-env-and-secrets.md)
+- 17. [Docker Compose 状态观察、重启与资源限制](notes/zh/17-docker-compose-state-and-resource-limits.md)
 
 英文和日文译文会随笔记逐步补充。
 

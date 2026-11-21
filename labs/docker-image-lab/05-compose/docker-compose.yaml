@@ -17,6 +17,11 @@ services:
       dockerfile: Dockerfile
     # Tag given to the image that Compose builds.
     image: spring-lab:dev
+    # Restart after an unexpected exit, but respect an explicit stop.
+    restart: unless-stopped
+    # Runtime limits enforced by the Docker host's cgroups.
+    cpus: 1.0
+    mem_limit: 512m
     # Publish only on the host's loopback address: host 8081 -> container 8080.
     ports:
       - "127.0.0.1:8081:8080"
@@ -39,6 +44,9 @@ services:
 
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 256m
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_DB: ${DB_NAME}
