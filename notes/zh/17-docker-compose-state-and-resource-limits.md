@@ -1,5 +1,7 @@
 # Docker Compose 状态观察、重启与资源限制
 
+[English](../17-docker-compose-state-and-resource-limits.md) | **中文** | [日本語](../ja/17-docker-compose-state-and-resource-limits.md)
+
 理解 Compose 的基本配置后，我开始关注另一个问题：容器创建出来以后，怎样观察它们是否正常运行，以及怎样限制它们对宿主机资源的使用。
 
 ## 1. 从 Project 到 Container 观察状态

@@ -1,5 +1,7 @@
 # Docker 故障排查实操（一）：容器启动后立即停止
 
+[English](../18-docker-troubleshooting-container-exits-immediately.md) | **中文** | [日本語](../ja/18-docker-troubleshooting-container-exits-immediately.md)
+
 这次开始整理常见的 Docker 故障排查场景。第一个现象是：执行 `docker run` 或 `docker compose up` 后，Container 刚刚启动就停止了。
 
 排查时先不急着修改 Dockerfile 或重建 Image，而是按照“状态、日志、详细信息”的顺序收集证据。

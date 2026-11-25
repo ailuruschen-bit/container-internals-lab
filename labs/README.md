@@ -16,7 +16,7 @@ The labs were run on macOS with OrbStack; any Docker Engine on Linux works the s
 | [`docker-image-lab/04-java/multi-stage/`](docker-image-lab/04-java/multi-stage/) | Multi-stage build: compile on a JDK, run on a JRE | [12](../notes/12-docker-image-build-java-multistage.md) |
 | [`docker-image-lab/04-java/entrypoint/`](docker-image-lab/04-java/entrypoint/) | How `ENTRYPOINT`, `CMD`, and run-time arguments combine | [12](../notes/12-docker-image-build-java-multistage.md) |
 | [`docker-image-lab/04-java/springboot/`](docker-image-lab/04-java/springboot/) | Spring Boot image with a Maven build stage and a non-root runtime | [12](../notes/12-docker-image-build-java-multistage.md), [13](../notes/13-docker-image-version-rollback-registry.md), [15](../notes/15-docker-user-best-practices.md) |
-| [`docker-image-lab/05-compose/`](docker-image-lab/05-compose/) | The Spring Boot app and PostgreSQL as one Compose project | [14](../notes/14-docker-compose-basics.md), [16](../notes/16-docker-compose-env-and-secrets.md), [17](../notes/zh/17-docker-compose-state-and-resource-limits.md) |
+| [`docker-image-lab/05-compose/`](docker-image-lab/05-compose/) | The Spring Boot app and PostgreSQL as one Compose project | [14](../notes/14-docker-compose-basics.md), [16](../notes/16-docker-compose-env-and-secrets.md), [17](../notes/17-docker-compose-state-and-resource-limits.md) |
 
 ## Bind mount lab
 

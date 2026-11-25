@@ -24,6 +24,8 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 - 14. [Getting Started with Docker Compose: From `docker run` to Multi-Service Configuration](notes/14-docker-compose-basics.md)
 - 15. [Docker `USER`: Running Applications as a Non-root User](notes/15-docker-user-best-practices.md)
 - 16. [Docker Compose Configuration in Practice: From `.env` to Secrets](notes/16-docker-compose-env-and-secrets.md)
+- 17. [Docker Compose: Observing State, Restarts, and Resource Limits](notes/17-docker-compose-state-and-resource-limits.md)
+- 18. [Docker Troubleshooting in Practice (1): A Container Stops Right After Starting](notes/18-docker-troubleshooting-container-exits-immediately.md)
 
 English and Japanese versions are added progressively as new notes are written.
 

@@ -24,6 +24,8 @@
 - 14. [Docker Compose 入門：`docker run` から複数サービスの構成へ](notes/ja/14-docker-compose-basics.md)
 - 15. [Docker の `USER`：アプリケーションを非 root で実行する](notes/ja/15-docker-user-best-practices.md)
 - 16. [Docker Compose の設定実践：`.env` から Secrets まで](notes/ja/16-docker-compose-env-and-secrets.md)
+- 17. [Docker Compose の状態の観察、再起動、リソース制限](notes/ja/17-docker-compose-state-and-resource-limits.md)
+- 18. [Docker のトラブルシューティング実践（1）：起動直後にコンテナが停止する](notes/ja/18-docker-troubleshooting-container-exits-immediately.md)
 
 英語版と日本語版は、ノートの追加に合わせて順次補充していく。
 
