@@ -26,6 +26,7 @@
 - 16. [Docker Compose 配置实操：从 `.env` 到 Secrets](notes/zh/16-docker-compose-env-and-secrets.md)
 - 17. [Docker Compose 状态观察、重启与资源限制](notes/zh/17-docker-compose-state-and-resource-limits.md)
 - 18. [Docker 故障排查实操（一）：容器启动后立即停止](notes/zh/18-docker-troubleshooting-container-exits-immediately.md)
+- 19. [Docker 故障排查实操（二）：容器还在运行，服务却挂了](notes/zh/19-docker-troubleshooting-service-down.md)
 
 英文和日文译文会随笔记逐步补充。
 

@@ -46,6 +46,8 @@ Container 停止不一定代表 Docker 本身发生故障。Container 的生命�
 docker logs <container>
 ```
 
+`<container>` 可以填容器名或 ID。如果是 Compose 启动的，在 Compose 文件所在目录也可以用 `docker compose logs <service>`，这里填的是 `services:` 下的服务名，例如 `app`。也可以用 `docker compose ps -a` 把状态列表缩小到当前项目。
+
 例如：
 
 ```bash
