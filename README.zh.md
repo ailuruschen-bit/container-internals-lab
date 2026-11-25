@@ -27,6 +27,7 @@
 - 17. [Docker Compose 状态观察、重启与资源限制](notes/zh/17-docker-compose-state-and-resource-limits.md)
 - 18. [Docker 故障排查实操（一）：容器启动后立即停止](notes/zh/18-docker-troubleshooting-container-exits-immediately.md)
 - 19. [Docker 故障排查实操（二）：容器还在运行，服务却挂了](notes/zh/19-docker-troubleshooting-service-down.md)
+- 20. [Docker 故障排查实操（三）：Spring Boot 解析不到数据库主机名](notes/zh/20-docker-troubleshooting-db-name-resolution.md)
 
 英文和日文译文会随笔记逐步补充。
 
