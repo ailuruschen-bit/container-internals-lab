@@ -25,9 +25,7 @@ It does not try to build a complete body of knowledge in one go. Each note expla
 - 15. [Docker `USER`: Running Applications as a Non-root User](notes/15-docker-user-best-practices.md)
 - 16. [Docker Compose Configuration in Practice: From `.env` to Secrets](notes/16-docker-compose-env-and-secrets.md)
 - 17. [Docker Compose: Observing State, Restarts, and Resource Limits](notes/17-docker-compose-state-and-resource-limits.md)
-- 18. [Docker Troubleshooting in Practice (1): A Container Stops Right After Starting](notes/18-docker-troubleshooting-container-exits-immediately.md)
-- 19. [Docker Troubleshooting in Practice (2): The Container Is Running, but the Service Is Down](notes/19-docker-troubleshooting-service-down.md)
-- 20. [Docker Troubleshooting in Practice (3): Spring Boot Cannot Resolve the Database Hostname](notes/20-docker-troubleshooting-db-name-resolution.md)
+- 18. [Docker Troubleshooting in Practice](notes/18-docker-troubleshooting-container-exits-immediately.md)
 
 English and Japanese versions are added progressively as new notes are written.
 

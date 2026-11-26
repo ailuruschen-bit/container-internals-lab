@@ -25,11 +25,7 @@
 - 15. [Docker `USER`：让应用以非 root 身份运行](notes/zh/15-docker-user-best-practices.md)
 - 16. [Docker Compose 配置实操：从 `.env` 到 Secrets](notes/zh/16-docker-compose-env-and-secrets.md)
 - 17. [Docker Compose 状态观察、重启与资源限制](notes/zh/17-docker-compose-state-and-resource-limits.md)
-- 18. [Docker 故障排查实操（一）：容器启动后立即停止](notes/zh/18-docker-troubleshooting-container-exits-immediately.md)
-- 19. [Docker 故障排查实操（二）：容器还在运行，服务却挂了](notes/zh/19-docker-troubleshooting-service-down.md)
-- 20. [Docker 故障排查实操（三）：Spring Boot 解析不到数据库主机名](notes/zh/20-docker-troubleshooting-db-name-resolution.md)
-- 21. [Docker 故障排查实操（四）：健康检查为什么失败？](notes/zh/21-docker-troubleshooting-healthcheck.md)
-- 22. [Docker 故障排查实操（五）：容器因内存不足退出](notes/zh/22-docker-troubleshooting-oom.md)
+- 18. [Docker 故障排查实操](notes/zh/18-docker-troubleshooting-container-exits-immediately.md)
 
 英文和日文译文会随笔记逐步补充。
 
