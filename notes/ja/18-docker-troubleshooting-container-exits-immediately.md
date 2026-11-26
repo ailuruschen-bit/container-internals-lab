@@ -12,11 +12,11 @@ docker logs --tail=100 <container>
 docker compose logs --tail=100 <service>
 ```
 
-Compose ファイルのあるディレクトリでは、`docker compose ps -a` で現在のプロジェクトのコンテナを確認できる。通常の Docker コマンドにはコンテナ名か ID を渡す。`docker compose logs`、`exec`、`top` にはサービス名を渡す。
+Compose ファイルのあるディレクトリでは、`docker compose ps -a` で現在のプロジェクトのコンテナを確認できる。通常の `docker` コマンドにはコンテナ名か ID を渡す。`docker compose logs`、`exec`、`top` にはサービス名を渡す。レプリカが 1 つだけのサービスを調べるときは、手元にある名前のどちらを使ってもよい。
 
 ## 1. コンテナが起動直後に終了する
 
-コンテナはメインプロセスとともに終了する。`Exited (0)` は単発処理の正常終了でも表示される。予期しない終了では、`.State` の `ExitCode`、`Error`、開始・終了時刻を見て、`.Config.Entrypoint` と `.Config.Cmd` で起動設定を確認する。アプリがログを出す前に起動に失敗すると、`Error` にだけ手がかりが残ることもある。
+コンテナはメインプロセスとともに終了する。`Exited (0)` は単発処理の正常終了でも表示される。予期しない終了では、`.State` の `ExitCode`、`Error`、開始・終了時刻を見て、`.Config.Entrypoint` と `.Config.Cmd` で起動設定を確認する。アプリケーションがログを出す前に起動に失敗すると、`Error` にだけ手がかりが残ることもある。
 
 ```bash
 docker inspect -f '{{json .State}}' <container>
@@ -34,13 +34,13 @@ docker top <container>
 docker exec -it <container> sh
 ```
 
-コンテナが `Up` なら、直近のログを追いながら `top` でサービスのプロセスが残っているか確認する。ファイルや権限、待ち受けポートを調べるときは `exec` で入り、イメージに入っている `ps` などを使う。プロセスが残っていれば、コンテナ内から待ち受けポートへの接続を試す。
+コンテナが `Up` なら、直近のログを追いながら `top` でサービスのプロセスが残っているか確認する。ファイルや権限、待ち受けポートを調べるときは `exec` で入り、イメージに入っている `ps` などを使う。プロセスが残っていれば、コンテナ内から待ち受けポートへの接続を試し、アクセスが失敗している範囲を絞り込む。
 
-修正を確認したらプロジェクト側に反映する。`compose.yaml` を変えた場合は `docker compose up -d app` で適用する。`docker compose restart app` は既存コンテナの設定を引き継ぐ。イメージの再ビルドが必要なら `docker compose up -d --build app` を使い、失敗していたリクエストを再確認する。
+コンテナ内で修正を確認したら、変更をプロジェクト側に書き戻す。`compose.yaml` を変えた場合は `docker compose up -d app` で適用する。`docker compose restart app` は既存コンテナの設定を引き継ぐ。イメージの再ビルドが必要なら `docker compose up -d --build app` を使い、失敗していたリクエストを再確認する。
 
 ## 3. Spring Boot がデータベースのホスト名を解決できない
 
-Spring Boot から PostgreSQL に接続できないときは、ログの `Caused by` をたどる。`UnknownHostException: db` なら、アプリコンテナで `getent hosts db` を実行する。終了済みなら、同じサービス設定で一時的なシェルを立ち上げる。
+Spring Boot から PostgreSQL に接続できないときは、ログの `Caused by` をたどる。`UnknownHostException: db` なら、アプリケーションのコンテナで `getent hosts db` を実行する。終了済みなら、同じサービス設定で一時的なシェルを立ち上げる。
 
 ```bash
 docker compose exec app getent hosts db
@@ -64,13 +64,13 @@ docker inspect <container> | jq '.[0].State.Health'
 docker inspect <container> | jq '.[0].State.Health.Log[-1]'
 ```
 
-`Up (unhealthy)` なら `.State.Health` を確認する。`FailingStreak` は連続失敗回数、`Log[-1]` は直近のチェック結果。まず `ExitCode` と `Output` を見て、手元で再実行するときは `.Config.Healthcheck` で実際のコマンドを確認する。
+`Up (unhealthy)` なら `.State.Health` を確認する。`FailingStreak` は連続失敗回数、`Log[-1]` は直近のチェック結果である。まず `ExitCode` と `Output` を見て、手元で再実行するときは `.Config.Healthcheck` で実際のコマンドを確認する。
 
 実験ではファイルがない状態でチェックを失敗させ、`Output` に `ready file missing` が表示された。
 
 ## 5. メモリ不足でコンテナが終了する
 
-突然 `Exited (137)` になり、アプリのログに目立った異常がなければ OOM を疑う。`137` は通常 `SIGKILL` に対応し、強制終了でも同じ値になる。`OOMKilled: true` は Docker が OOM による終了を記録したことを示す。このとき `Error` が空の場合もある。
+突然 `Exited (137)` になり、アプリケーションのログに目立った異常がなければ OOM を疑う。`137` は通常 `SIGKILL` に対応し、強制終了でも同じ値になる。`OOMKilled: true` は Docker が OOM による終了を記録したことを示す。このとき `Error` が空の場合もある。
 
 ```bash
 docker inspect <container> | jq '.[0].State | {Status, ExitCode, OOMKilled, Error}'

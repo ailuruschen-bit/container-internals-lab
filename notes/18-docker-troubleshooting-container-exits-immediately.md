@@ -2,9 +2,9 @@
 
 **English** | [中文](zh/18-docker-troubleshooting-container-exits-immediately.md) | [日本語](ja/18-docker-troubleshooting-container-exits-immediately.md)
 
-When a container fails, I start with `ps`, then check logs and `inspect`. These five cases start the same way. The symptom determines what I check next.
+When a container fails, I first use `ps` to confirm whether it is still running, then check the logs and `inspect`. These cases all start the same way; what I check next depends on the symptom in front of me.
 
-## Start with status and logs
+## Start with Status and Logs
 
 ```bash
 docker ps -a
@@ -12,9 +12,9 @@ docker logs --tail=100 <container>
 docker compose logs --tail=100 <service>
 ```
 
-In the Compose file directory, `docker compose ps -a` shows containers in the current project. Plain Docker commands take a container name or ID. `docker compose logs`, `exec`, and `top` take a service name.
+In the Compose file directory, `docker compose ps -a` shows containers in the current project. Plain `docker` commands take a container name or ID. `docker compose logs`, `exec`, and `top` take a service name. For a service with a single replica, either name works, so use whichever is at hand.
 
-## 1. The container exits immediately
+## 1. The Container Exits Immediately
 
 A container exits with its main process. `Exited (0)` can be a one-off job completing normally. For an unexpected exit, I look at `ExitCode`, `Error`, and the timestamps in `.State`, then check `.Config.Entrypoint` and `.Config.Cmd`. A failure during startup may appear in `Error` before the application writes any logs.
 
@@ -24,9 +24,9 @@ docker inspect -f '{{json .Config.Entrypoint}}' <container>
 docker inspect -f '{{json .Config.Cmd}}' <container>
 ```
 
-If I need to find a field, I start with the full `docker inspect <container>` output. It is a JSON array, so `.[0]` selects the first container when using `jq`.
+If I am not sure of a field path, I start with the full `docker inspect <container>` output. It is a JSON array, so `.[0]` selects the first container when using `jq`.
 
-## 2. The container is up but the service is down
+## 2. The Container Is Up, but the Service Is Down
 
 ```bash
 docker logs -f --tail=20 <container>
@@ -36,9 +36,9 @@ docker exec -it <container> sh
 
 When the container is `Up`, I follow recent logs and use `top` to see whether the service process is still there. For files, permissions, or listening ports, I open a shell with `exec` and use tools available in the image, such as `ps`. If the service process is present, testing its port from inside the container helps narrow down where the request fails.
 
-Once a fix works, apply it in the project. Run `docker compose up -d app` after editing `compose.yaml`. `docker compose restart app` reuses the existing container configuration. If the fix requires rebuilding the image, use `docker compose up -d --build app`, then retry the failed request.
+Once a fix has been verified inside the container, write it back to the project. Run `docker compose up -d app` after editing `compose.yaml`. `docker compose restart app` reuses the existing container configuration. If the fix requires rebuilding the image, use `docker compose up -d --build app`, then retry the failed request.
 
-## 3. Spring Boot cannot resolve the database hostname
+## 3. Spring Boot Cannot Resolve the Database Hostname
 
 When Spring Boot cannot connect to PostgreSQL, I follow `Caused by` in the logs. For `UnknownHostException: db`, I run `getent hosts db` in the application container. If it has exited, I open a temporary shell with the same service configuration.
 
@@ -56,7 +56,7 @@ exit
 
 In the lab, the temporary container resolved `db` and returned no record for a nonexistent name.
 
-## 4. The health check fails
+## 4. The Health Check Fails
 
 ```bash
 docker inspect -f '{{json .State.Health}}' <container>
@@ -68,7 +68,7 @@ For `Up (unhealthy)`, I check `.State.Health`. `FailingStreak` counts consecutiv
 
 In the lab, a missing file caused the probe to fail and `Output` contained `ready file missing`.
 
-## 5. The container is killed due to memory pressure
+## 5. The Container Exits Because It Runs Out of Memory
 
 A sudden `Exited (137)` with no obvious application error points me toward OOM. `137` usually corresponds to `SIGKILL`, which can also come from a manual kill. `OOMKilled: true` means Docker recorded an OOM kill. `Error` may still be empty.
 
