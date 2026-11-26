@@ -28,6 +28,7 @@
 - 18. [Docker 故障排查实操（一）：容器启动后立即停止](notes/zh/18-docker-troubleshooting-container-exits-immediately.md)
 - 19. [Docker 故障排查实操（二）：容器还在运行，服务却挂了](notes/zh/19-docker-troubleshooting-service-down.md)
 - 20. [Docker 故障排查实操（三）：Spring Boot 解析不到数据库主机名](notes/zh/20-docker-troubleshooting-db-name-resolution.md)
+- 21. [Docker 故障排查实操（四）：健康检查为什么失败？](notes/zh/21-docker-troubleshooting-healthcheck.md)
 
 英文和日文译文会随笔记逐步补充。
 
