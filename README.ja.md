@@ -26,6 +26,8 @@
 - 16. [Docker Compose の設定実践：`.env` から Secrets まで](notes/ja/16-docker-compose-env-and-secrets.md)
 - 17. [Docker Compose の状態の観察、再起動、リソース制限](notes/ja/17-docker-compose-state-and-resource-limits.md)
 - 18. [Docker のトラブルシューティング実践（1）：起動直後にコンテナが停止する](notes/ja/18-docker-troubleshooting-container-exits-immediately.md)
+- 19. [Docker のトラブルシューティング実践（2）：コンテナは動いているのにサービスが落ちている](notes/ja/19-docker-troubleshooting-service-down.md)
+- 20. [Docker のトラブルシューティング実践（3）：Spring Boot がデータベースのホスト名を解決できない](notes/ja/20-docker-troubleshooting-db-name-resolution.md)
 
 英語版と日本語版は、ノートの追加に合わせて順次補充していく。
 

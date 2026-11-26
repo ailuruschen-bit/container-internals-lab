@@ -1,5 +1,7 @@
 # Docker 故障排查实操（二）：容器还在运行，服务却挂了
 
+[English](../19-docker-troubleshooting-service-down.md) | **中文** | [日本語](../ja/19-docker-troubleshooting-service-down.md)
+
 上一次看到的是容器退出。这次 `docker ps` 里容器仍然是 `Up`，但服务已经无法响应。只要容器的主进程还活着，Docker 就会继续显示 `Up`。接下来要确认的是服务进程是否还在，以及它出问题前留下了什么日志。
 
 ## 1. 从状态和最近的日志查起

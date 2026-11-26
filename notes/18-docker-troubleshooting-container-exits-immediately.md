@@ -46,6 +46,8 @@ With the ID or name in hand, the next step is to check the logs:
 docker logs <container>
 ```
 
+`<container>` can be either the container name or its ID. For a container started by Compose, you can also run `docker compose logs <service>` in the directory containing the Compose file, where the argument is the service name under `services:`, such as `app`. `docker compose ps -a` likewise narrows the status list down to the current project.
+
 For example:
 
 ```bash

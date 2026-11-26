@@ -1,5 +1,7 @@
 # Docker 故障排查实操（三）：Spring Boot 解析不到数据库主机名
 
+[English](../20-docker-troubleshooting-db-name-resolution.md) | **中文** | [日本語](../ja/20-docker-troubleshooting-db-name-resolution.md)
+
 Spring Boot 连不上 PostgreSQL 时，我还是先按平时排查 Java 应用的办法读异常链。看到 `UnknownHostException: db` 后，再从应用所在的网络环境确认 `db` 能不能解析。
 
 ## 1. 从日志里找到解析失败的主机名

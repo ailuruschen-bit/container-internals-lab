@@ -46,6 +46,8 @@ ID または名前がわかったら、次にログを確認する。
 docker logs <container>
 ```
 
+`<container>` にはコンテナ名と ID のどちらを指定してもよい。Compose で起動したコンテナであれば、Compose ファイルがあるディレクトリで `docker compose logs <service>` を使うこともできる。ここで指定するのは `services:` の下のサービス名で、たとえば `app` である。また、`docker compose ps -a` を使えば、状態の一覧を現在のプロジェクトに絞り込める。
+
 例：
 
 ```bash
