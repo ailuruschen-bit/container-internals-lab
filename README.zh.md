@@ -29,6 +29,7 @@
 - 19. [Docker 故障排查实操（二）：容器还在运行，服务却挂了](notes/zh/19-docker-troubleshooting-service-down.md)
 - 20. [Docker 故障排查实操（三）：Spring Boot 解析不到数据库主机名](notes/zh/20-docker-troubleshooting-db-name-resolution.md)
 - 21. [Docker 故障排查实操（四）：健康检查为什么失败？](notes/zh/21-docker-troubleshooting-healthcheck.md)
+- 22. [Docker 故障排查实操（五）：容器因内存不足退出](notes/zh/22-docker-troubleshooting-oom.md)
 
 英文和日文译文会随笔记逐步补充。
 
